@@ -38,11 +38,5 @@ export const data = {
       icon: RadioTower,
       isActive: true,
     },
-    {
-      title: "Surveys",
-      url: "/admin/surveys",
-      icon: NotebookPen,
-      isActive: true,
-    },
   ],
 };
