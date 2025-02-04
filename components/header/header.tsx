@@ -18,6 +18,7 @@ export default function Header() {
     "/admin/dashboard": "Dashboard",
     "/admin/parking": "Parking Spaces",
     "/admin/guest-list": "Guest List",
+    "/staff/qr-parking": "QR Parking",
   };
 
   const pageTitle = pageTitles[pathname] || "Unknown Page";
