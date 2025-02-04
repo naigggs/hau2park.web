@@ -25,14 +25,14 @@ export function GuestModal({ guest, onClose }: Readonly<GuestModalProps>) {
 
   const handleAccept = async () => {
     if (guest) {
-      await updateVisitorApprovalStatus(guest.id, "Approved");
+      await updateVisitorApprovalStatus(guest.id, "Approved", guest.email);
       onClose();
     }
   };
 
   const handleDecline = async () => {
     if (guest) {
-      await updateVisitorApprovalStatus(guest.id, "Declined");
+      await updateVisitorApprovalStatus(guest.id, "Declined", guest.email);
       onClose();
     }
   };

@@ -14,7 +14,7 @@ import { GuestModal } from "@/components/guest-list/guest-modal";
 import { useGuestList } from "@/hooks/guestList";
 
 export function GuestList() {
-  const { guestList, error, loading } = useGuestList(); // Example arguments: page number and page size
+  const { guestList, error, loading } = useGuestList();
   const [selectedGuest, setSelectedGuest] = useState<GuestList | null>(null);
 
   if (loading) {
