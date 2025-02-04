@@ -6,7 +6,7 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import { AppSidebar } from "@/components/admin/sidebar/app-sidebar";
-import Header from "@/components/admin/header/header";
+import Header from "@/components/header/header";
 
 const inter = Inter({
   variable: "--font-inter",
