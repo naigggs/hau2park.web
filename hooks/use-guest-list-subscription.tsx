@@ -10,23 +10,38 @@ export const useGuestListSubscription = () => {
 
   const supabase = createClient();
 
+  const fetchGuestWithUser = async (guest: GuestList) => {
+    const { data, error } = await supabase
+      .from("guest_parking_request")
+      .select("*, user_id(*)")
+      .eq("id", guest.id)
+      .single();
+
+    if (error) {
+      console.error("Error fetching guest with user data:", error);
+      return guest; 
+    }
+
+    return data;
+  };
+
   useEffect(() => {
     const subscription = supabase
       .channel("guest-list-changes")
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "guest_parking_request" },
-        (payload) => {
+        async (payload) => {
           switch (payload.eventType) {
             case "INSERT":
-              setGuestList((prev) => [payload.new as GuestList, ...prev]);
+              const newGuestWithUser = await fetchGuestWithUser(payload.new as GuestList);
+              setGuestList((prev) => [newGuestWithUser, ...prev]);
               break;
             case "UPDATE":
+              const updatedGuestWithUser = await fetchGuestWithUser(payload.new as GuestList);
               setGuestList((prev) =>
                 prev.map((guest) =>
-                  guest.id === (payload.new as GuestList).id
-                    ? (payload.new as GuestList)
-                    : guest
+                  guest.id === updatedGuestWithUser.id ? updatedGuestWithUser : guest
                 )
               );
               break;
