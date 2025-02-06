@@ -11,8 +11,10 @@ import {
     isOpen: boolean
     onClose: () => void
     qrCode: {
-      code: string
-      isUsed: boolean
+      secret_key: string
+      is_used: boolean
+      qr_code_url: string
+      user_id: string
       createdAt: string
     } | null
   }
@@ -28,17 +30,17 @@ import {
       <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>QR Code: {qrCode.code}</DialogTitle>
+            <DialogTitle>QR Code</DialogTitle>
           </DialogHeader>
           <div className="flex flex-col items-center space-y-4">
             <Image
-              src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${qrCode.code}`}
-              alt={`QR Code ${qrCode.code}`}
+              src={qrCode.qr_code_url}
+              alt="QR Code"
               width={300}
               height={300}
             />
-            <Badge variant={qrCode.isUsed ? "secondary" : "default"}>
-              {qrCode.isUsed ? "Used" : "Available"}
+            <Badge variant={qrCode.is_used ? "secondary" : "default"}>
+              {qrCode.is_used ? "Used" : "Available"}
             </Badge>
             <p className="text-sm text-muted-foreground">
               Created: {formatDate(qrCode.createdAt)}

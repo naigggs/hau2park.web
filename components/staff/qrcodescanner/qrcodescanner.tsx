@@ -18,15 +18,21 @@ const QrCodeScanner: React.FC = () => {
 
                     const supabase = createClient();
                     const { data: existingRow, error } = await supabase
-                        .from("visitor_approvals")
+                        .from("guest_parking_request")
                         .select("*")
                         .eq("id", parsedData.id)
                         .eq("status", "Approved")
-                        .eq("email", parsedData.email)
+                        .eq("user_id", parsedData.user_id)
                         .eq("secret_key", parsedData.secret_key)
                         .single();
 
-                    if (error) {
+                    const { data: qrCodeData, error: qrError } = await supabase
+                        .from("guest_qr_codes")
+                        .update({ is_used: true })
+                        .eq("user_id", parsedData.user_id) // change to actual user id
+                        .eq("secret_key", parsedData.secret_key);
+
+                    if (error  && qrError) {
                         console.log("No existing row found");
                         setAcceptedMessage("Your parking request has been denied.");
                         return;

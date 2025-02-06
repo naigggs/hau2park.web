@@ -27,7 +27,7 @@ export function GuestModal({ guest, onClose }: Readonly<GuestModalProps>) {
   const handleAccept = async () => {
     if (guest) {
       try {
-        await updateVisitorApprovalStatus(guest.id, "Approved", guest.user_id.email);
+        await updateVisitorApprovalStatus(guest.id, "Approved", guest.user_id.email, guest.user_id.user_id);
         toast({
           title: "Success",
           description: "Guest has been approved.",
@@ -46,7 +46,7 @@ export function GuestModal({ guest, onClose }: Readonly<GuestModalProps>) {
   const handleDecline = async () => {
     if (guest) {
       try {
-        await updateVisitorApprovalStatus(guest.id, "Declined", guest.user_id.email);
+        await updateVisitorApprovalStatus(guest.id, "Declined", guest.user_id.email, guest.user_id.user_id);
         toast({
           title: "Success",
           description: "Guest has been declined.",
