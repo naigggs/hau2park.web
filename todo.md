@@ -6,7 +6,6 @@
 
 Changed user_id to actual user_id
 - [ ] Guest Actions
-- [ ] Admin Actions
 - [ ] Use Guest QR Hook
 
 Fix Dates
