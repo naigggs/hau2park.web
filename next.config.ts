@@ -1,7 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  images: {
+    domains: ['placehold.co', 'api.qrserver.com'], 
+    dangerouslyAllowSVG: true,
+  },
 };
 
 export default nextConfig;

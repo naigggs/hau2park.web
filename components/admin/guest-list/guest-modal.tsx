@@ -1,4 +1,4 @@
-'use client'
+"use client";
 
 import {
   Dialog,
@@ -10,6 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { updateVisitorApprovalStatus } from "@/app/api/admin/actions";
+import { useToast } from "@/hooks/use-toast";
 
 interface GuestModalProps {
   guest: GuestList | null;
@@ -25,30 +26,56 @@ export function GuestModal({ guest, onClose }: Readonly<GuestModalProps>) {
 
   const handleAccept = async () => {
     if (guest) {
-      await updateVisitorApprovalStatus(guest.id, "Approved", guest.email);
-      onClose();
+      try {
+        await updateVisitorApprovalStatus(guest.id, "Approved", guest.user_id.email);
+        toast({
+          title: "Success",
+          description: "Guest has been approved.",
+        });
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to approve guest.",
+        });
+      } finally {
+        onClose();
+      }
     }
   };
 
   const handleDecline = async () => {
     if (guest) {
-      await updateVisitorApprovalStatus(guest.id, "Declined", guest.email);
-      onClose();
+      try {
+        await updateVisitorApprovalStatus(guest.id, "Declined", guest.user_id.email);
+        toast({
+          title: "Success",
+          description: "Guest has been declined.",
+        });
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to decline guest.",
+        });
+      } finally {
+        onClose();
+      }
     }
   };
+
+  const { toast } = useToast();
 
   return (
     <Dialog open={!!guest} onOpenChange={onClose}>
       <DialogContent className="max-w-3xl">
         <DialogHeader>
-          <DialogTitle>{guest.visitor_name}</DialogTitle>
+          <DialogTitle>{guest.user_id.first_name} {guest.user_id.last_name}</DialogTitle>
           <DialogDescription>Guest Details</DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-2 gap-4">
             <InfoItem label="ID" value={guest.id.toString()} />
             <InfoItem label="Title" value={guest.title} />
-            <InfoItem label="Email" value={guest.email} />
+            <InfoItem label="Email" value={guest.user_id.email} />
             <InfoItem
               label="Appointment Date"
               value={formatDate(guest.appointment_date)}
@@ -56,7 +83,7 @@ export function GuestModal({ guest, onClose }: Readonly<GuestModalProps>) {
             <InfoItem label="Purpose of Visit" value={guest.purpose_of_visit} />
             <InfoItem
               label="Vehicle Plate Number"
-              value={guest.vehicle_plate_number || "N/A"}
+              value={guest.user_id.vehicle_plate_number || "N/A"}
             />
             <InfoItem
               label="Parking Start Time"
@@ -76,7 +103,9 @@ export function GuestModal({ guest, onClose }: Readonly<GuestModalProps>) {
           {guest.status === "Open" && (
             <div className="flex justify-end gap-x-2">
               <Button onClick={handleAccept}>Accept</Button>
-              <Button onClick={handleDecline} variant={"destructive"}>Decline</Button>
+              <Button onClick={handleDecline} variant={"destructive"}>
+                Decline
+              </Button>
             </div>
           )}
         </div>

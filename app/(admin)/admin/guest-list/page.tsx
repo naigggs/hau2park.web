@@ -1,5 +1,5 @@
-import { GuestList } from "@/components/guest-list/guest-list";
-import { AllGuestList } from "@/components/guest-list/guest-list-all";
+import { GuestList } from "@/components/admin/guest-list/guest-list";
+import { AllGuestList } from "@/components/admin/guest-list/guest-list-all";
 
 export default function GuestsPage() {
   return (

@@ -1,6 +1,7 @@
 import { GalleryVerticalEnd } from "lucide-react"
 import { Toaster } from "@/components/ui/toaster"
 import { LoginForm } from "@/components/auth/login-form"
+import Image from "next/image"
 
 export default function LoginPage() {
   return (
@@ -22,9 +23,11 @@ export default function LoginPage() {
         </div>
       </div>
       <div className="relative hidden bg-muted lg:block">
-        <img
+        <Image
           src="https://placehold.co/1000x2000"
           alt="Image"
+          width={1000}
+          height={2000}
           className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
         />
       </div>

@@ -19,6 +19,7 @@ export default function Header() {
     "/admin/parking": "Parking Spaces",
     "/admin/guest-list": "Guest List",
     "/staff/qr-parking": "QR Parking",
+    "/guest/qr-code": "QR Code List",
   };
 
   const pageTitle = pageTitles[pathname] || "Unknown Page";

@@ -5,7 +5,7 @@ import "@/app/shared/css/globals.css";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
-import { AppSidebar } from "@/components/staff/sidebar/app-sidebar";
+import { AppSidebar } from "@/components/admin/sidebar/app-sidebar";
 import Header from "@/components/shared/header/header";
 
 const inter = Inter({
@@ -21,7 +21,7 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "Admin Dashboard",
+  title: "Guest Dashboard",
 };
 
 // async function checkAdminAccess() {
@@ -48,7 +48,7 @@ export const metadata: Metadata = {
 //   }
 // }
 
-export default async function StaffLayout({
+export default async function GuestLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
