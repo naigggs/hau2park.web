@@ -3,45 +3,22 @@ import {
   SquareTerminal,
   TicketPlus,
   RadioTower,
-  NotebookPen
+  NotebookPen,
 } from "lucide-react";
 
 export const data = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
   teams: [
     {
-      name: "Manibaug Porac",
+      name: "HAU2Park",
       logo: GalleryVerticalEnd,
-      plan: "Ticket System",
+      plan: "Parking Management System",
     },
   ],
   navMain: [
     {
-      title: "Dashboard",
-      url: "/user/dashboard",
-      icon: SquareTerminal,
-      isActive: true,
-    },
-    {
       title: "Submit Ticket",
-      url: "/user/tickets",
+      url: "/staff/qr-parking",
       icon: TicketPlus,
-      isActive: true,
-    },
-    {
-      title: "Announcements",
-      url: "/user/announcements",
-      icon: RadioTower,
-      isActive: true,
-    },
-    {
-      title: "Surveys",
-      url: "/user/surveys",
-      icon: NotebookPen,
       isActive: true,
     },
   ],
