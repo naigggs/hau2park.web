@@ -8,6 +8,7 @@ export default async function GuestChatBotPage() {
     .from("guest_qr_codes")
     .select("*")
     .eq("user_id", "2eb76e8a-7ae0-48f8-8c65-f322f696ce39") // change to actual user id
+    
 
   if (error) {
     console.error("Error fetching guest qr codes:", error)
