@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Table,
   TableBody,
@@ -10,21 +10,22 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { GuestModal } from "@/components/guest-list/guest-modal";
-import { useGuestList } from "@/hooks/guestList";
+import { GuestModal } from "./guest-modal";
+import GuestListLoading from "@/components/shared/loading/guest-list";
+import { useGuestListSubscription } from "@/hooks/use-guest-list-subscription";
 
 export function GuestList() {
-  const { guestList, error, loading } = useGuestList();
+  const { guestList, error, loading } = useGuestListSubscription();
   const [selectedGuest, setSelectedGuest] = useState<GuestList | null>(null);
 
   if (loading) {
-    return <div>Loading guests...</div>;
+    return <GuestListLoading />;
   }
 
   if (error) {
     return <div>Error loading guest list: {error.message}</div>;
   }
-
+  console.log(guestList);
   return (
     <div className="container mx-auto">
       <Table>
@@ -44,9 +45,9 @@ export function GuestList() {
             .map((guest) => (
               <TableRow key={guest.id}>
                 <TableCell className="font-medium">
-                  {guest.visitor_name}
+                  {guest.user_id.first_name} {guest.user_id.last_name}
                 </TableCell>
-                <TableCell>{guest.email}</TableCell>
+                <TableCell>{guest.user_id.email}</TableCell>
                 <TableCell>{guest.appointment_date}</TableCell>
                 <TableCell>
                   {guest.parking_start_time} - {guest.parking_end_time}
