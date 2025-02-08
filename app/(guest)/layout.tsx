@@ -5,7 +5,7 @@ import "@/app/shared/css/globals.css";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
-import { AppSidebar } from "@/components/admin/sidebar/app-sidebar";
+import { AppSidebar } from "@/components/guest/sidebar/app-sidebar";
 import Header from "@/components/shared/header/header";
 
 const inter = Inter({
@@ -24,37 +24,11 @@ export const metadata: Metadata = {
   title: "Guest Dashboard",
 };
 
-// async function checkAdminAccess() {
-//   const supabase = await createClient();
-
-//   // Get current user
-//   const {
-//     data: { user },
-//   } = await supabase.auth.getUser();
-
-//   if (!user) {
-//     redirect("/auth/login");
-//   }
-
-//   // Check user role
-//   const { data: roleData } = await supabase
-//     .from("user-roles")
-//     .select("role_id")
-//     .eq("user_id", user.id)
-//     .single();
-
-//   if (!roleData || roleData.role_id !== 3) {
-//     redirect("/");
-//   }
-// }
-
 export default async function GuestLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // await checkAdminAccess();
-
   return (
     <html lang="en">
       <body className={`${inter.variable} antialiased`}>

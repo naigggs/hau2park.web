@@ -15,10 +15,12 @@ export default function Header() {
   const pathname = usePathname();
 
   const pageTitles: { [key: string]: string } = {
-    "/admin/dashboard": "Dashboard",
+    "/admin/dashboard": "Admin Dashboard",
     "/admin/parking": "Parking Spaces",
     "/admin/guest-list": "Guest List",
     "/staff/qr-parking": "QR Parking",
+    "/guest/dashboard": "Guest Dashboard",
+    "/guest/chat-bot": "HAU2Park Chatbot",
     "/guest/qr-code": "QR Code List",
   };
 
