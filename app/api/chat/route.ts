@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { createClient } from "@/utils/supabase/server";
+import { headers } from "next/headers";
 
 export async function POST(req: Request) {
   const supabase = await createClient();
@@ -16,7 +17,18 @@ export async function POST(req: Request) {
   }
 
   try {
-    const { prompt } = await req.json();
+    const { prompt, context } = await req.json();
+    const { currentUser, timestamp } = context || {};
+
+    // Check if context exists and has required parking flow data
+    if (context?.selectedParking && !context?.entrance) {
+      return NextResponse.json({
+        response: "What entrance are you coming from? (Main Entrance or Side Entrance)",
+        timestamp,
+        user: currentUser
+      });
+    }
+    
     const apiKey = process.env.GEMINI_API_KEY || "";
     const genAI = new GoogleGenerativeAI(apiKey);
 
@@ -31,14 +43,15 @@ export async function POST(req: Request) {
         "        When a user inquires about their parking status, provide their exact parking space and the parking area location.\n" +
         '        Avoid unnecessary phrases like "Based on the data"—deliver information confidently.\n' +
         "    Accuracy and Reliability\n" +
-        "        Always rely on the system’s data—do not guess or assume availability.\n" +
+        "        Always rely on the system's data—do not guess or assume availability.\n" +
         "        If data is missing or unclear, prompt the user to check again later.\n" +
         "        The user you only respond is the current logged in user." +
         "\n" +
         "Your primary goal is to provide precise, efficient, and secure parking information.\n" +
         "\n" +
         "\n" +
-        "Current logged-in user: Gian Cabigting:\n" +
+        `Current logged-in user: ${currentUser}\n` +
+        `Current timestamp: ${timestamp}\n` +
         `Data: ${JSON.stringify(parkingSpaceData)}`,
     });
 
@@ -66,7 +79,11 @@ export async function POST(req: Request) {
     const result = await chatSession.sendMessage(prompt);
     const responseText = result.response.text();
 
-    return NextResponse.json({ response: responseText });
+    return NextResponse.json({ 
+      response: responseText,
+      timestamp,
+      user: currentUser
+    });
   } catch (error: any) {
     console.error("Error calling Gemini API:", error);
     return new NextResponse(error.message || "Error processing request.", {

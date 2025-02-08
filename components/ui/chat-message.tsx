@@ -2,8 +2,8 @@
 
 import React, { useMemo } from "react"
 import { cva, type VariantProps } from "class-variance-authority"
-import { Code2, Loader2, Terminal } from "lucide-react"
-
+import { Code2, Loader2, Terminal, Map } from "lucide-react"
+import ChatbotMapsRoute from "./google-map-chat-message"
 import { cn } from "@/lib/utils"
 import { FilePreview } from "@/components/ui/file-preview"
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer"
@@ -50,10 +50,16 @@ const chatBubbleVariants = cva(
 
 type Animation = VariantProps<typeof chatBubbleVariants>["animation"]
 
+interface MapData {
+  origin: { lat: number; lng: number };
+  destination: { lat: number; lng: number };
+}
+
 interface Attachment {
   name?: string
   contentType?: string
   url: string
+  mapData?: MapData // Add this to extend the existing Attachment type
 }
 
 interface PartialToolCall {
@@ -102,12 +108,14 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
   toolInvocations,
 }) => {
   const files = useMemo(() => {
-    return experimental_attachments?.map((attachment) => {
+    return experimental_attachments?.filter(att => !att.mapData).map((attachment) => {
       const dataArray = dataUrlToUint8Array(attachment.url)
       const file = new File([dataArray], attachment.name ?? "Unknown")
       return file
     })
   }, [experimental_attachments])
+
+  const mapAttachment = experimental_attachments?.find(att => att.mapData)
 
   if (toolInvocations && toolInvocations.length > 0) {
     return <ToolCall toolInvocations={toolInvocations} />
@@ -122,7 +130,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
 
   return (
     <div className={cn("flex flex-col", isUser ? "items-end" : "items-start")}>
-      {files ? (
+      {files && files.length > 0 ? (
         <div className="mb-1 flex flex-wrap gap-2">
           {files.map((file, index) => {
             return <FilePreview file={file} key={index} />
@@ -134,6 +142,20 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
         <div>
           <MarkdownRenderer>{content}</MarkdownRenderer>
         </div>
+
+        {mapAttachment?.mapData && (
+          <div className="mt-2 rounded-lg overflow-hidden border bg-background">
+            <div className="flex items-center gap-2 border-b bg-muted px-3 py-2 text-sm text-muted-foreground">
+              <Map className="h-4 w-4" />
+              <span>Route to Parking Space</span>
+            </div>
+            <ChatbotMapsRoute
+              origin={mapAttachment.mapData.origin}
+              destination={mapAttachment.mapData.destination}
+              apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!}
+            />
+          </div>
+        )}
 
         {role === "assistant" && actions ? (
           <div className="absolute -bottom-4 right-2 flex space-x-1 rounded-lg border bg-background p-1 text-foreground opacity-0 transition-opacity group-hover/message:opacity-100">
