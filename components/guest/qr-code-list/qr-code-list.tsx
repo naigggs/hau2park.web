@@ -13,12 +13,10 @@ export default function QRCodeList() {
   const {guestQRList, loading, error} = useGuestQRCodeList()
   const [selectedQRCode, setSelectedQRCode] = useState<QRCode | null>(null)
 
+  console.log(guestQRList)
+
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
-    const month = String(date.getMonth() + 1).padStart(2, '0')
-    const day = String(date.getDate()).padStart(2, '0')
-    const year = date.getFullYear()
-    return `${month}/${day}/${year}`
+    return new Date(dateString).toLocaleString()
   }
 
   const handleCardClick = (qrCode: QRCode) => {
@@ -42,7 +40,7 @@ console.log(guestQRList)
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {guestQRList.map((qrCode) => (
           <Card 
-            key={qrCode.user_id} 
+            key={qrCode.id} 
             className="cursor-pointer transition-shadow hover:shadow-md"
             onClick={() => handleCardClick(qrCode)}
           >
@@ -63,7 +61,7 @@ console.log(guestQRList)
                 />
               </div>
               <p className="text-xs text-muted-foreground">
-              Created: {qrCode.createdAt}
+              Created: {formatDate(qrCode.created_at)}
               </p>
             </CardContent>
           </Card>

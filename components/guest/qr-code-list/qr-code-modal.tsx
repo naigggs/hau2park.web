@@ -11,11 +11,12 @@ import {
     isOpen: boolean
     onClose: () => void
     qrCode: {
+      id: number
       secret_key: string
       is_used: boolean
       qr_code_url: string
       user_id: string
-      createdAt: string
+      created_at: string
     } | null
   }
   
@@ -43,7 +44,7 @@ import {
               {qrCode.is_used ? "Used" : "Available"}
             </Badge>
             <p className="text-sm text-muted-foreground">
-              Created: {formatDate(qrCode.createdAt)}
+              Created: {formatDate(qrCode.created_at)}
             </p>
           </div>
         </DialogContent>
