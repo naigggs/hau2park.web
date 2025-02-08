@@ -139,7 +139,7 @@ export function MessageInput({
     onKeyDownProp?.(event)
   }
 
-  const textAreaRef = useRef<HTMLTextAreaElement | null>(null)
+  const textAreaRef = useRef<HTMLTextAreaElement>(null!)
 
   const showFileList =
     props.allowAttachments && props.files && props.files.length > 0
