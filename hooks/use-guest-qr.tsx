@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/utils/supabase/client";
+import { useUser } from "@/app/context/user-context";
 
 export const useGuestQRCodeList = () => {
   const [guestQRList, setGuestQRList] = useState<QRCode[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const { userId } = useUser();
 
   const supabase = createClient();
 
@@ -17,7 +19,7 @@ export const useGuestQRCodeList = () => {
       const { data, error } = await supabase
         .from("guest_qr_codes")
         .select("*")
-        .eq("user_id", "2eb76e8a-7ae0-48f8-8c65-f322f696ce39"); // change to actual user id
+        .eq("user_id", userId);
 
       if (error) {
         setError(error);

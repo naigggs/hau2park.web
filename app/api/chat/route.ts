@@ -4,10 +4,17 @@ import { createClient } from "@/utils/supabase/server";
 
 export async function POST(req: Request) {
   const supabase = await createClient();
+  const userId = req.headers.get("user_id");
 
   const { data: parkingSpaceData, error: parkingSpaceError } = await supabase
     .from("parking_spaces")
     .select("name, status, user, location");
+
+  const { data: currentLoggedInUser, error } = await supabase
+    .from("user_info")
+    .select("*")
+    .eq("user_id", userId)
+    .single();
 
   if (parkingSpaceError) {
     return new NextResponse("Error fetching parking space data", {
@@ -38,7 +45,11 @@ export async function POST(req: Request) {
         "Your primary goal is to provide precise, efficient, and secure parking information.\n" +
         "\n" +
         "\n" +
-        "Current logged-in user: Gian Cabigting:\n" +
+        `Current logged-in user: ${JSON.stringify(
+          currentLoggedInUser.first_name
+        )} ${JSON.stringify(
+          currentLoggedInUser.last_name
+        )}:\n` +
         `Data: ${JSON.stringify(parkingSpaceData)}`,
     });
 

@@ -4,8 +4,9 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 
-export async function SubmitGuestParkingRequest(formData: FormData) {
+export async function SubmitGuestParkingRequest(formData: FormData, req: Request) {
   const supabase = await createClient();
+  const userId = req.headers.get("user_id");
   const data = {
     title: formData.get("title") as string,
     purpose: formData.get("purpose") as string,
@@ -17,7 +18,7 @@ export async function SubmitGuestParkingRequest(formData: FormData) {
   const { error: requestError } = await supabase
     .from("guest_parking_request")
     .insert({
-      user_id: "2eb76e8a-7ae0-48f8-8c65-f322f696ce39", // change to actual user id
+      user_id: userId,
       title: data.title,
       appointment_date: data.appointmentDate,
       purpose_of_visit: data.purpose,
