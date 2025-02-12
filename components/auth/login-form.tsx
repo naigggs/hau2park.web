@@ -1,10 +1,10 @@
-    "use client";
+"use client";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-// import { login } from "@/app/api/auth/actions";
+import { Login } from "@/app/api/auth/actions";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 
@@ -14,19 +14,18 @@ export function LoginForm({
 }: React.ComponentPropsWithoutRef<"form">) {
   const router = useRouter();
   const { toast } = useToast();
-  
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const formData = new FormData(event.currentTarget);
     try {
-    //   await login(formData);
-        toast({
-          title: "Login Success!",
-          description: "You have successfully logged in.",
-          className: "bg-green-500 text-white", 
-        });
+        await Login(formData);
+      toast({
+        title: "Login Success!",
+        description: "You have successfully logged in.",
+        className: "bg-green-500 text-white",
+      });
     } catch (error) {
       console.error("Login failed:", error);
       toast({
@@ -62,12 +61,6 @@ export function LoginForm({
         <div className="grid gap-2">
           <div className="flex items-center">
             <Label htmlFor="password">Password</Label>
-            <a
-              href="#"
-              className="ml-auto text-sm underline-offset-4 hover:underline"
-            >
-              Forgot your password?
-            </a>
           </div>
           <Input id="password" name="password" type="password" required />
         </div>
@@ -76,7 +69,7 @@ export function LoginForm({
         </Button>
       </div>
       <div className="text-center text-sm">
-       Are you a guest? {" "}
+        Are you a guest?{" "}
         <a href="/auth/guest-form" className="underline underline-offset-4">
           Guest Form
         </a>

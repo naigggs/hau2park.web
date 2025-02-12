@@ -37,16 +37,61 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-//   if (
-//     !user &&
-//     !request.nextUrl.pathname.startsWith('/login') &&
-//     !request.nextUrl.pathname.startsWith('/auth')
-//   ) {
-//     // no user, potentially respond by redirecting the user to the login page
-//     const url = request.nextUrl.clone()
-//     url.pathname = '/login'
-//     return NextResponse.redirect(url)
-//   }
+  if (
+    !user &&
+    !request.nextUrl.pathname.startsWith('/login') &&
+    !request.nextUrl.pathname.startsWith('/auth')
+  ) {
+    // no user, potentially respond by redirecting the user to the login page
+    const url = request.nextUrl.clone()
+    url.pathname = '/auth/login'
+    return NextResponse.redirect(url)
+  }
+
+  if (user) {
+    const userId = user.id;
+
+    const { data: userRoles, error } = (await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId)) as { data: UserRole[] | null; error: any };
+
+    if (error || !userRoles || userRoles.length === 0) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/auth/forbidden";
+      return NextResponse.redirect(url);
+    }
+
+    const roles = userRoles.map((role) => role.role);
+
+    const adminRoutes = ["/admin", "/admin/dashboard"];
+    const staffRoutes = ["/staff", "/staff/dashboard"];
+
+    if (roles.includes("User")) {
+      if (adminRoutes.includes(request.nextUrl.pathname) || staffRoutes.includes(request.nextUrl.pathname)) {
+        const url = request.nextUrl.clone();
+        url.pathname = "/auth/forbidden";
+        return NextResponse.redirect(url);
+      }
+    }
+
+    if (adminRoutes.includes(request.nextUrl.pathname) && !roles.includes("Admin")) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/auth/forbidden";
+      return NextResponse.redirect(url);
+    }
+
+    if (staffRoutes.includes(request.nextUrl.pathname) && !roles.includes("Staff")) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/auth/forbidden";
+      return NextResponse.redirect(url);
+    }
+
+    const response = NextResponse.next();
+    response.headers.set("user_id", userId);
+    response.headers.set("user_roles", roles.join(","));
+    return response;
+  }
 
   // IMPORTANT: You *must* return the supabaseResponse object as it is.
   // If you're creating a new response object with NextResponse.next() make sure to:

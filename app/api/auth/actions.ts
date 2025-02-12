@@ -7,22 +7,41 @@ import { createClient } from "@/utils/supabase/server";
 
 export async function Login(formData: FormData) {
   const supabase = await createClient();
-
-  // type-casting here for convenience
-  // in practice, you should validate your inputs
   const data = {
     email: formData.get("email") as string,
     password: formData.get("password") as string,
   };
 
-  const { error } = await supabase.auth.signInWithPassword(data);
+  const { data: authData, error } = await supabase.auth.signInWithPassword(data);
 
   if (error) {
-    redirect("/error");
+    console.log("Login Error", error);
+    return error;
   }
 
-  revalidatePath("/", "layout");
-  redirect("/");
+  const { data: roleData, error: roleError } = await supabase
+  .from("user_roles")
+  .select("role")
+  .eq("user_id", authData.user.id)
+  .single();
+
+if (roleError) {
+  console.log("Error fetching role:", roleError);
+  redirect("/auth/login");
+}
+
+revalidatePath("/", "layout");
+
+if (roleData.role === "Admin") {
+  redirect("/admin/dashboard");
+} else if (roleData.role === "Staff") {
+  redirect("/staff/dashboard");
+} else if (roleData.role === "User") {
+  redirect("/user/dashboard");
+} else if (roleData.role === "Guest") {
+  redirect("/guest/dashboard");
+}
+
 }
 
 export async function GuestSignUp(formData: FormData) {

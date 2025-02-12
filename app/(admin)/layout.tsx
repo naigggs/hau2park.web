@@ -7,6 +7,7 @@ import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import { AppSidebar } from "@/components/admin/sidebar/app-sidebar";
 import Header from "@/components/shared/header/header";
+import { UserProvider } from "../context/user-context";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -24,30 +25,6 @@ export const metadata: Metadata = {
   title: "Admin Dashboard",
 };
 
-// async function checkAdminAccess() {
-//   const supabase = await createClient();
-
-//   // Get current user
-//   const {
-//     data: { user },
-//   } = await supabase.auth.getUser();
-
-//   if (!user) {
-//     redirect("/auth/login");
-//   }
-
-//   // Check user role
-//   const { data: roleData } = await supabase
-//     .from("user-roles")
-//     .select("role_id")
-//     .eq("user_id", user.id)
-//     .single();
-
-//   if (!roleData || roleData.role_id !== 3) {
-//     redirect("/");
-//   }
-// }
-
 export default async function AdminLayout({
   children,
 }: Readonly<{
@@ -62,7 +39,9 @@ export default async function AdminLayout({
           <AppSidebar />
           <SidebarInset>
             <Header />
+            <UserProvider>
             {children}
+            </UserProvider>
             <Toaster />
           </SidebarInset>
         </SidebarProvider>
