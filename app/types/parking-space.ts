@@ -8,4 +8,5 @@ interface ParkingSpace {
     time_out: string;
     created_at: string;
     updated_at: string;
+    location: string;
 }
