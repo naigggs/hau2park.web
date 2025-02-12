@@ -7,6 +7,7 @@ import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import { AppSidebar } from "@/components/guest/sidebar/app-sidebar";
 import Header from "@/components/shared/header/header";
+import { UserProvider } from "../context/user-context";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -36,7 +37,7 @@ export default async function GuestLayout({
           <AppSidebar />
           <SidebarInset>
             <Header />
-            {children}
+            <UserProvider>{children}</UserProvider>
             <Toaster />
           </SidebarInset>
         </SidebarProvider>
