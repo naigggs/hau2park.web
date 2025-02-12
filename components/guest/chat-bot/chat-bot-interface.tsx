@@ -23,6 +23,7 @@ export default function ChatPage() {
   const [input, setInput] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [conversationHistory, setConversationHistory] = useState<string[]>([]);
+  const [awaitingParkingConfirmation, setAwaitingParkingConfirmation] = useState<string | null>(null);
 
   const handleMessage = useCallback(async (prompt: string) => {
     setIsGenerating(true);
@@ -31,16 +32,17 @@ export default function ChatPage() {
       const context = ChatContextManager.getContext();
       setConversationHistory(prev => [...prev, prompt]);
 
-      // Check for parking space selection
-      if (prompt.toLowerCase().includes("park in")) {
-        const parkingSpace = prompt.match(/park in (P\d+)/i)?.[1];
-        if (parkingSpace) {
+      // Handle parking confirmation responses
+      if (awaitingParkingConfirmation) {
+        const response = prompt.toLowerCase();
+        if (response.includes('yes') || response.includes('yeah') || response.includes('sure')) {
+          setAwaitingParkingConfirmation(null);
           // First, check availability through the API
           const availabilityResponse = await fetch("/api/chat", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ 
-              prompt: `Check availability of ${parkingSpace}`,
+              prompt: `Check availability of ${awaitingParkingConfirmation}`,
               context: { checkAvailability: true }
             }),
           });
@@ -53,15 +55,27 @@ export default function ChatPage() {
           const isOccupied = availabilityStatus.toLowerCase().includes("occupied");
 
           if (isOccupied) {
-            return `${parkingSpace} is currently occupied. Please choose another parking space.`;
+            return `${awaitingParkingConfirmation} is currently occupied. Please choose another parking space.`;
           }
 
           // If not occupied, update context and ask for entrance
           ChatContextManager.updateContext({
-            selectedParking: parkingSpace,
+            selectedParking: awaitingParkingConfirmation,
             lastParkingQuery: prompt,
           });
           return "What entrance are you coming from? (Main Entrance or Side Entrance)";
+        } else if (response.includes('no')) {
+          setAwaitingParkingConfirmation(null);
+          return "What would you like to do instead?";
+        }
+      }
+
+      // Check for parking space selection
+      if (prompt.toLowerCase().includes("park in") || prompt.toLowerCase().includes("i want to park in")) {
+        const parkingSpace = prompt.match(/park in (P\d+)/i)?.[1];
+        if (parkingSpace) {
+          setAwaitingParkingConfirmation(parkingSpace);
+          return `Are you sure you want to park in ${parkingSpace}?`;
         }
       }
 
@@ -91,7 +105,7 @@ export default function ChatPage() {
     } finally {
       setIsGenerating(false);
     }
-  }, [conversationHistory]);
+  }, [conversationHistory, awaitingParkingConfirmation]);
 
   const createMessage = useCallback((response: string, isAi = false) => {
     const context = ChatContextManager.getContext();
