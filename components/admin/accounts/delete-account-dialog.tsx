@@ -10,14 +10,41 @@ import {
   } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Trash2 } from "lucide-react";
+import { deleteUser } from "@/app/api/admin/actions";
+import { useToast } from "@/hooks/use-toast";
 
 export default function DeleteAccountDialog({ id, name }: { id: string; name: string }) {
-    const [open, setOpen] = useState(false)
+    const [open, setOpen] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const { toast } = useToast();
   
-    const handleDelete = () => {
-      console.log(`Deleting account ${id}`)
-      setOpen(false)
-      // Here you would typically call an API to delete the account
+    const handleDelete = async () => {
+      setIsLoading(true);
+      try {
+        const response = await deleteUser(id);
+        
+        if (response.error) {
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: response.error,
+          });
+        } else {
+          toast({
+            title: "Success",
+            description: "Account deleted successfully",
+          });
+          setOpen(false);
+        }
+      } catch (error) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to delete account",
+        });
+      } finally {
+        setIsLoading(false);
+      }
     }
   
     return (
@@ -36,11 +63,15 @@ export default function DeleteAccountDialog({ id, name }: { id: string; name: st
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)}>
+            <Button variant="outline" onClick={() => setOpen(false)} disabled={isLoading}>
               Cancel
             </Button>
-            <Button variant="destructive" onClick={handleDelete}>
-              Delete Account
+            <Button 
+              variant="destructive" 
+              onClick={handleDelete} 
+              disabled={isLoading}
+            >
+              {isLoading ? "Deleting..." : "Delete Account"}
             </Button>
           </DialogFooter>
         </DialogContent>

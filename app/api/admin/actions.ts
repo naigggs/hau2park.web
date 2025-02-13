@@ -153,7 +153,6 @@ export const createNewUser = async (formData: FormData) => {
       return { error: userInfoError.message };
     }
 
-    // Insert user role
     const { error: roleError } = await supabase.from("user_roles").insert({
       user_id: userId,
       role: role
@@ -167,6 +166,45 @@ export const createNewUser = async (formData: FormData) => {
     return { success: true, userId };
   } catch (error) {
     console.error("Unexpected error during user creation:", error);
+    return { error: "An unexpected error occurred" };
+  }
+};
+
+export const deleteUser = async (userId: string) => {
+  const supabase = createClient();
+
+  try {
+
+    const { error: userInfoError } = await supabase
+      .from("user_info")
+      .delete()
+      .eq("user_id", userId);
+
+    if (userInfoError) {
+      console.error("Error deleting user info:", userInfoError);
+      return { error: userInfoError.message };
+    }
+
+    const { error: roleError } = await supabase
+      .from("user_roles")
+      .delete()
+      .eq("user_id", userId);
+
+    if (roleError) {
+      console.error("Error deleting user role:", roleError);
+      return { error: roleError.message };
+    }
+
+    const { error: authError } = await supabaseAdminClient.auth.admin.deleteUser(userId);
+
+    if (authError) {
+      console.error("Error deleting user auth:", authError);
+      return { error: authError.message };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("Unexpected error during user deletion:", error);
     return { error: "An unexpected error occurred" };
   }
 };
