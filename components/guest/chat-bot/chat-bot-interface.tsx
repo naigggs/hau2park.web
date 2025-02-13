@@ -70,7 +70,7 @@ export default function ChatPage() {
           const { error: updateError } = await supabase
             .from("parking_spaces")
             .update({
-              status: "Occupied",
+              status: "Reserved",
               user: `${firstName} ${lastName}`,
               updated_at: currentDateTime,
             })
