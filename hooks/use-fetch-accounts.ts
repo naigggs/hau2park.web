@@ -51,7 +51,6 @@ export function useUsers() {
 
         setData({ users: usersWithRoles, loading: false, error: null });
 
-        // Subscribe to realtime changes
         userInfoChannel = supabase
           .channel('user_info_changes')
           .on('postgres_changes', 
@@ -135,7 +134,6 @@ export function useUsers() {
 
     fetchUsers();
 
-    // Cleanup subscriptions
     return () => {
       if (userInfoChannel) userInfoChannel.unsubscribe();
       if (userRolesChannel) userRolesChannel.unsubscribe();
