@@ -14,3 +14,7 @@ Changed user_id to actual user_id
 
 Fix Dates
 - [x] QR List Guest
+
+Design
+- [ ] Staff QR Code Scan
+- [ ] Staff Dashbaord
