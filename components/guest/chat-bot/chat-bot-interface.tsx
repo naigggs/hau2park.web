@@ -4,6 +4,13 @@ import { useState, useCallback } from "react";
 import { Chat } from "@/components/ui/chat";
 import type { Message } from "@/components/ui/chat-message";
 import { ChatContextManager } from "@/utils/supabase/chat-context";
+import { createClient } from '@supabase/supabase-js';
+import { useUser } from "@/app/context/user-context";
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 const ENTRANCES = {
   Main: { lat: 15.133697555616646, lng: 120.59028871717273 },
@@ -19,6 +26,7 @@ const suggestions = [
 ];
 
 export default function ChatPage() {
+  const { userId, firstName, lastName } = useUser();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
@@ -37,6 +45,11 @@ export default function ChatPage() {
         const response = prompt.toLowerCase();
         if (response.includes('yes') || response.includes('yeah') || response.includes('sure')) {
           setAwaitingParkingConfirmation(null);
+
+          if (!userId) {
+            return 'You must be logged in to reserve a parking space.';
+          }
+
           // First, check availability through the API
           const availabilityResponse = await fetch("/api/chat", {
             method: "POST",
@@ -58,12 +71,29 @@ export default function ChatPage() {
             return `${awaitingParkingConfirmation} is currently occupied. Please choose another parking space.`;
           }
 
-          // If not occupied, update context and ask for entrance
+          const currentDateTime = new Date().toISOString();
+
+          // Update the parking space status in Supabase
+          const { error: updateError } = await supabase
+            .from("parking_spaces")
+            .update({
+              status: "Occupied",
+              user: `${firstName} ${lastName}`,
+              updated_at: currentDateTime,
+            })
+            .eq("name", awaitingParkingConfirmation.toUpperCase());
+
+          if (updateError) {
+            console.error('Error updating parking space:', updateError);
+            return 'Sorry, there was an error reserving the parking space. Please try again.';
+          }
+
+          // If successful, update context and ask for entrance
           ChatContextManager.updateContext({
             selectedParking: awaitingParkingConfirmation,
             lastParkingQuery: prompt,
           });
-          return "What entrance are you coming from? (Main Entrance or Side Entrance)";
+          return "What entrance are you coming from? (Main Entrance or Side Entrance)?";
         } else if (response.includes('no')) {
           setAwaitingParkingConfirmation(null);
           return "What would you like to do instead?";
@@ -72,8 +102,9 @@ export default function ChatPage() {
 
       // Check for parking space selection
       if (prompt.toLowerCase().includes("park in") || prompt.toLowerCase().includes("i want to park in")) {
-        const parkingSpace = prompt.match(/park in (P\d+)/i)?.[1];
-        if (parkingSpace) {
+        const parkingSpaceMatch = prompt.toLowerCase().match(/park in (p\d+)/i);
+        if (parkingSpaceMatch) {
+          const parkingSpace = parkingSpaceMatch[1].toUpperCase();
           setAwaitingParkingConfirmation(parkingSpace);
           return `Are you sure you want to park in ${parkingSpace}?`;
         }
@@ -105,7 +136,7 @@ export default function ChatPage() {
     } finally {
       setIsGenerating(false);
     }
-  }, [conversationHistory, awaitingParkingConfirmation]);
+  }, [conversationHistory, awaitingParkingConfirmation, userId]);
 
   const createMessage = useCallback((response: string, isAi = false) => {
     const context = ChatContextManager.getContext();
