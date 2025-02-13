@@ -1,4 +1,5 @@
 import { createClient } from "@/utils/supabase/client";
+import { supabaseAdminClient } from "@/utils/supabase/service-role";
 import QRCode from "qrcode";
 
 export const updateVisitorApprovalStatus = async (
@@ -105,3 +106,68 @@ export const updateVisitorApprovalStatus = async (
 
   return data;
 };
+
+export const createNewUser = async (formData: FormData) => {
+  const supabase = createClient();
+
+  const email = formData.get('email') as string;
+  const password = formData.get('password') as string;
+  const firstName = formData.get('firstName') as string;
+  const lastName = formData.get('lastName') as string;
+  const vehiclePlateNumber = formData.get('vehiclePlateNumber') as string;
+  const role = formData.get('role') as string;
+
+  if (!email || !password || !firstName || !lastName || !vehiclePlateNumber || !role) {
+    return { error: "All fields are required" };
+  }
+
+  try {
+
+    const { data: authData, error: authError } = await supabaseAdminClient.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true
+    });
+
+    if (authError) {
+      console.error("Error creating user:", authError);
+      return { error: authError.message };
+    }
+
+    if (!authData.user) {
+      return { error: "User creation failed" };
+    }
+
+    const userId = authData.user.id;
+
+    const { error: userInfoError } = await supabase.from("user_info").insert({
+      user_id: userId,
+      email: email,
+      first_name: firstName,
+      last_name: lastName,
+      vehicle_plate_number: vehiclePlateNumber
+    });
+
+    if (userInfoError) {
+      console.error("Error inserting user info:", userInfoError);
+      return { error: userInfoError.message };
+    }
+
+    // Insert user role
+    const { error: roleError } = await supabase.from("user_roles").insert({
+      user_id: userId,
+      role: role
+    });
+
+    if (roleError) {
+      console.error("Error inserting user role:", roleError);
+      return { error: roleError.message };
+    }
+
+    return { success: true, userId };
+  } catch (error) {
+    console.error("Unexpected error during user creation:", error);
+    return { error: "An unexpected error occurred" };
+  }
+};
+

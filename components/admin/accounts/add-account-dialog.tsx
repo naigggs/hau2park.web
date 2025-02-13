@@ -19,22 +19,65 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { PlusCircle } from "lucide-react";
+import { createNewUser } from "@/app/api/admin/actions";
+import { useToast } from "@/hooks/use-toast";
 
 export function AddAccountDialog() {
   const [open, setOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    // Handle form submission logic here
-    console.log("Form submitted");
-    setOpen(false);
+    setIsLoading(true);
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+    
+    const password = formData.get('password');
+    const confirmPassword = formData.get('confirm_password');
+    
+    if (password !== confirmPassword) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Passwords do not match",
+      });
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const response = await createNewUser(formData);
+      
+      if (response.error) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: response.error,
+        });
+      } else {
+        toast({
+          title: "Success",
+          description: "Account created successfully",
+        });
+        form.reset();
+        setOpen(false);
+      }
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to create account",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="outline">
-          {" "}
           <PlusCircle className="mr-1 h-4 w-4" />
           Add New Account
         </Button>
@@ -46,12 +89,12 @@ export function AddAccountDialog() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="first_name">First Name</Label>
-              <Input id="first_name" name="first_name" required />
+              <Label htmlFor="firstName">First Name</Label>
+              <Input id="firstName" name="firstName" required />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="last_name">Last Name</Label>
-              <Input id="last_name" name="last_name" required />
+              <Label htmlFor="lastName">Last Name</Label>
+              <Input id="lastName" name="lastName" required />
             </div>
           </div>
           <div className="space-y-2">
@@ -72,8 +115,8 @@ export function AddAccountDialog() {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="vehicle_plate">Vehicle Plate Number</Label>
-            <Input id="vehicle_plate" name="vehicle_plate" required />
+            <Label htmlFor="vehiclePlateNumber">Vehicle Plate Number</Label>
+            <Input id="vehiclePlateNumber" name="vehiclePlateNumber" required />
           </div>
           <div className="space-y-2">
             <Label htmlFor="role">Role</Label>
@@ -82,15 +125,15 @@ export function AddAccountDialog() {
                 <SelectValue placeholder="Select a role" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="admin">Admin</SelectItem>
-                <SelectItem value="staff">Staff</SelectItem>
-                <SelectItem value="user">User</SelectItem>
-                <SelectItem value="guest">Guest</SelectItem>
+                <SelectItem value="Admin">Admin</SelectItem>
+                <SelectItem value="Staff">Staff</SelectItem>
+                <SelectItem value="User">User</SelectItem>
+                <SelectItem value="Guest">Guest</SelectItem>
               </SelectContent>
             </Select>
           </div>
-          <Button type="submit" className="w-full">
-            Add Account
+          <Button type="submit" className="w-full" disabled={isLoading}>
+            {isLoading ? "Creating..." : "Add Account"}
           </Button>
         </form>
       </DialogContent>
