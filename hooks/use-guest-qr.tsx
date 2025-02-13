@@ -13,24 +13,41 @@ export const useGuestQRCodeList = () => {
   const supabase = createClient();
 
   useEffect(() => {
+    // Keep loading true while waiting for userId
+    if (!userId) {
+      return;
+    }
+
     const fetchData = async () => {
-      setLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from("guest_qr_codes")
+          .select("*")
+          .eq("user_id", userId);
 
-      const { data, error } = await supabase
-        .from("guest_qr_codes")
-        .select("*")
-        .eq("user_id", userId);
-
-      if (error) {
-        setError(error);
-      } else {
-        setGuestQRList(data);
+        if (error) {
+          setError(error);
+        } else {
+          setGuestQRList(data || []);
+        }
+      } catch (err) {
+        setError(err as Error);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     fetchData();
-  }, []);
+  }, [userId]); 
+
+  // Reset states when userId changes to null
+  useEffect(() => {
+    if (!userId) {
+      setGuestQRList([]);
+      setError(null);
+      setLoading(true);
+    }
+  }, [userId]);
 
   return { guestQRList, loading, error };
 };

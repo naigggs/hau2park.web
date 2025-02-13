@@ -17,6 +17,7 @@ export default function Header() {
   const pageTitles: { [key: string]: string } = {
     "/admin/dashboard": "Admin Dashboard",
     "/admin/parking": "Parking Spaces",
+    "/admin/accounts": "Accounts",
     "/admin/guest-list": "Guest List",
     "/staff/qr-parking": "QR Parking",
     "/guest/dashboard": "Guest Dashboard",

@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/select";
 import { useParkingSpaces } from "@/hooks/use-parking-space";
 import { ParkingSpaceModal } from "@/components/admin/parking/parking-space-modal";
+import ParkingListLoading from "@/components/shared/loading/parking-list";
 
 export default function ParkingSpacesPage() {
   const { parkingSpaces, error, refresh, isLoading } = useParkingSpaces();
@@ -56,6 +57,7 @@ export default function ParkingSpacesPage() {
                 <SelectItem value="All">All</SelectItem>
                 <SelectItem value="Open">Open</SelectItem>
                 <SelectItem value="Occupied">Occupied</SelectItem>
+                <SelectItem value="Reserved">Reserved</SelectItem>
               </SelectGroup>
             </SelectContent>
           </Select>
@@ -71,11 +73,7 @@ export default function ParkingSpacesPage() {
         >
           {isLoading ? (
             Array.from({ length: 5 }).map((_, index) => (
-              <div key={index} className="rounded-lg border p-3 space-y-3">
-                <Skeleton className="h-4 w-24" />
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-16" />
-              </div>
+             <ParkingListLoading key={index} />
             ))
           ) : (
             filteredSpaces?.map((space) => (
