@@ -7,11 +7,6 @@ import {
 } from "lucide-react";
 
 export const data = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
   teams: [
     {
       name: "HAU2Park",
@@ -30,6 +25,12 @@ export const data = {
       title: "Parking",
       url: "/admin/parking",
       icon: TicketPlus,
+      isActive: true,
+    },
+    {
+      title: "Accounts",
+      url: "/admin/accounts",
+      icon: NotebookPen,
       isActive: true,
     },
     {
