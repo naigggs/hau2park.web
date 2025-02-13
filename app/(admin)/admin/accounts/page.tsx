@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 
 import DeleteAccountDialog from "@/components/admin/accounts/delete-account-dialog";
 import { useUsers } from "@/hooks/use-fetch-accounts";
+import { AddAccountDialog } from "@/components/admin/accounts/add-account-dialog";
 
 export default function AccountsList() {
   const { users, loading, error } = useUsers();
@@ -35,9 +36,7 @@ export default function AccountsList() {
             className="pl-8"
           />
         </div>
-        <Button>
-          <PlusCircle className="mr-1 h-4 w-4" /> Add New Account
-        </Button>
+        <AddAccountDialog />
       </div>
       <Table>
         <TableHeader>
