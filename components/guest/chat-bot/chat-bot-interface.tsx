@@ -4,13 +4,8 @@ import { useState, useCallback } from "react";
 import { Chat } from "@/components/ui/chat";
 import type { Message } from "@/components/ui/chat-message";
 import { ChatContextManager } from "@/utils/supabase/chat-context";
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from "@/utils/supabase/client";
 import { useUser } from "@/app/context/user-context";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
 
 const ENTRANCES = {
   Main: { lat: 15.133697555616646, lng: 120.59028871717273 },
@@ -40,7 +35,6 @@ export default function ChatPage() {
       const context = ChatContextManager.getContext();
       setConversationHistory(prev => [...prev, prompt]);
 
-      // Handle parking confirmation responses
       if (awaitingParkingConfirmation) {
         const response = prompt.toLowerCase();
         if (response.includes('yes') || response.includes('yeah') || response.includes('sure')) {
@@ -50,7 +44,6 @@ export default function ChatPage() {
             return 'You must be logged in to reserve a parking space.';
           }
 
-          // First, check availability through the API
           const availabilityResponse = await fetch("/api/chat", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -71,9 +64,9 @@ export default function ChatPage() {
             return `${awaitingParkingConfirmation} is currently occupied. Please choose another parking space.`;
           }
 
-          const currentDateTime = new Date().toISOString();
+          const currentDateTime = new Date().toISOString().slice(0, 19).replace('T', ' ');
+          const supabase = createClient();
 
-          // Update the parking space status in Supabase
           const { error: updateError } = await supabase
             .from("parking_spaces")
             .update({
@@ -88,7 +81,6 @@ export default function ChatPage() {
             return 'Sorry, there was an error reserving the parking space. Please try again.';
           }
 
-          // If successful, update context and ask for entrance
           ChatContextManager.updateContext({
             selectedParking: awaitingParkingConfirmation,
             lastParkingQuery: prompt,

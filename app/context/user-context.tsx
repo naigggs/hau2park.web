@@ -1,12 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect } from "react";
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+import { createClient } from "@/utils/supabase/client";
 
 interface UserContextType {
   userId: string | null;
@@ -28,11 +23,11 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         const data = await res.json();
         setUserId(data.userId);
 
-        // Fetch user info from user_info table using the correct column name
+        const supabase = createClient();
         const { data: userInfo, error } = await supabase
           .from('user_info')
           .select('first_name, last_name')
-          .eq('user_id', data.userId) // Changed from 'id' to 'user_id'
+          .eq('user_id', data.userId)
           .single();
 
         if (userInfo) {
