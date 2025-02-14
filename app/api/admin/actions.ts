@@ -110,24 +110,31 @@ export const updateVisitorApprovalStatus = async (
 export const createNewUser = async (formData: FormData) => {
   const supabase = createClient();
 
-  const email = formData.get('email') as string;
-  const password = formData.get('password') as string;
-  const firstName = formData.get('firstName') as string;
-  const lastName = formData.get('lastName') as string;
-  const vehiclePlateNumber = formData.get('vehiclePlateNumber') as string;
-  const role = formData.get('role') as string;
+  const email = formData.get("email") as string;
+  const password = formData.get("password") as string;
+  const firstName = formData.get("firstName") as string;
+  const lastName = formData.get("lastName") as string;
+  const vehiclePlateNumber = formData.get("vehiclePlateNumber") as string;
+  const role = formData.get("role") as string;
 
-  if (!email || !password || !firstName || !lastName || !vehiclePlateNumber || !role) {
+  if (
+    !email ||
+    !password ||
+    !firstName ||
+    !lastName ||
+    !vehiclePlateNumber ||
+    !role
+  ) {
     return { error: "All fields are required" };
   }
 
   try {
-
-    const { data: authData, error: authError } = await supabaseAdminClient.auth.admin.createUser({
-      email,
-      password,
-      email_confirm: true
-    });
+    const { data: authData, error: authError } =
+      await supabaseAdminClient.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+      });
 
     if (authError) {
       console.error("Error creating user:", authError);
@@ -145,7 +152,7 @@ export const createNewUser = async (formData: FormData) => {
       email: email,
       first_name: firstName,
       last_name: lastName,
-      vehicle_plate_number: vehiclePlateNumber
+      vehicle_plate_number: vehiclePlateNumber,
     });
 
     if (userInfoError) {
@@ -155,7 +162,7 @@ export const createNewUser = async (formData: FormData) => {
 
     const { error: roleError } = await supabase.from("user_roles").insert({
       user_id: userId,
-      role: role
+      role: role,
     });
 
     if (roleError) {
@@ -174,7 +181,6 @@ export const deleteUser = async (userId: string) => {
   const supabase = createClient();
 
   try {
-
     const { error: userInfoError } = await supabase
       .from("user_info")
       .delete()
@@ -195,7 +201,8 @@ export const deleteUser = async (userId: string) => {
       return { error: roleError.message };
     }
 
-    const { error: authError } = await supabaseAdminClient.auth.admin.deleteUser(userId);
+    const { error: authError } =
+      await supabaseAdminClient.auth.admin.deleteUser(userId);
 
     if (authError) {
       console.error("Error deleting user auth:", authError);
@@ -209,3 +216,48 @@ export const deleteUser = async (userId: string) => {
   }
 };
 
+export async function updateUser(formData: FormData) {
+  const supabase = createClient();
+
+  const userId = formData.get("user_id") as string;
+  const firstName = formData.get("first_name") as string;
+  const lastName = formData.get("last_name") as string;
+  const vehiclePlateNumber = formData.get("vehicle_plate_number") as string;
+  const roleName = formData.get("role_name") as string;
+
+  if (!userId || !firstName || !lastName || !vehiclePlateNumber || !roleName) {
+    return { error: "All fields are required" };
+  }
+
+  try {
+    const { error: userInfoError } = await supabase
+      .from("user_info")
+      .update({
+        first_name: firstName,
+        last_name: lastName,
+        vehicle_plate_number: vehiclePlateNumber,
+      })
+      .eq("user_id", userId);
+
+    if (userInfoError) {
+      console.error("Error updating user info:", userInfoError);
+      return { error: userInfoError.message };
+    }
+
+    // Update user_roles table
+    const { error: roleError } = await supabase
+      .from("user_roles")
+      .update({ role: roleName })
+      .eq("user_id", userId);
+
+    if (roleError) {
+      console.error("Error updating user role:", roleError);
+      return { error: roleError.message };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("Unexpected error during user update:", error);
+    return { error: "An unexpected error occurred" };
+  }
+}

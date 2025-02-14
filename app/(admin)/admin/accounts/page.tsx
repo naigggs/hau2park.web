@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from "react";
 import { PlusCircle, Search, Pencil } from "lucide-react";
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -18,14 +17,26 @@ import { Badge } from "@/components/ui/badge";
 import DeleteAccountDialog from "@/components/admin/accounts/delete-account-dialog";
 import { useUsers } from "@/hooks/use-fetch-accounts";
 import { AddAccountDialog } from "@/components/admin/accounts/add-account-dialog";
+import { EditAccountDialog } from "@/components/admin/accounts/edit-account-dialog";
+
+interface UserWithRole {
+  user_id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  vehicle_plate_number: string;
+  role_name: string;
+}
 
 export default function AccountsList() {
   const { users, loading, error } = useUsers();
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedAccount, setSelectedAccount] = useState<UserWithRole | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   return (
     <div className="flex-1 space-y-4 p-8 pt-6">
-       <h2 className="text-3xl font-bold tracking-tight">Manage Accounts</h2>
+      <h2 className="text-3xl font-bold tracking-tight">Manage Accounts</h2>
       <div className="flex justify-between items-center mb-4">
         <div className="relative w-64">
           <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -74,7 +85,14 @@ export default function AccountsList() {
               </TableCell>
               <TableCell>
                 <div className="flex space-x-2">
-                  <Button variant="outline" size="sm">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      setSelectedAccount(account);
+                      setIsEditDialogOpen(true);
+                    }}
+                  >
                     <Pencil className="h-4 w-4" />
                   </Button>
                   <DeleteAccountDialog
@@ -87,6 +105,13 @@ export default function AccountsList() {
           ))}
         </TableBody>
       </Table>
+      {selectedAccount && (
+        <EditAccountDialog 
+          open={isEditDialogOpen}
+          onOpenChange={setIsEditDialogOpen}
+          initialData={selectedAccount}
+        />
+      )}
     </div>
   );
 }
