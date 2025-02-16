@@ -27,11 +27,6 @@ export default async function GuestChatBotPage() {
     .single()
 
   if (error) {
-    console.error("Error fetching guest qr codes:", error)
-    return <div>Error: Unable to verify access</div>
-  }
-
-  if (!checkActiveQR) {
     return <div>No Access: Please scan a valid QR code to use the chatbot.</div>
   }
 

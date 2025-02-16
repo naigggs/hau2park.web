@@ -13,7 +13,6 @@ export const useGuestQRCodeList = () => {
   const supabase = createClient();
 
   useEffect(() => {
-    // Keep loading true while waiting for userId
     if (!userId) {
       return;
     }
@@ -40,7 +39,6 @@ export const useGuestQRCodeList = () => {
     fetchData();
   }, [userId]); 
 
-  // Reset states when userId changes to null
   useEffect(() => {
     if (!userId) {
       setGuestQRList([]);
