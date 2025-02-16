@@ -90,20 +90,20 @@ export function AddAccountDialog() {
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="firstName">First Name</Label>
-              <Input id="firstName" name="firstName" required />
+              <Input id="firstName" name="firstName" placeholder="John" required />
             </div>
             <div className="space-y-2">
               <Label htmlFor="lastName">Last Name</Label>
-              <Input id="lastName" name="lastName" required />
+              <Input id="lastName" name="lastName" placeholder="Doe" required />
             </div>
           </div>
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
-            <Input id="email" name="email" type="email" required />
+            <Input id="email" name="email" type="email" placeholder="john.doe@example.com" required />
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
-            <Input id="password" name="password" type="password" required />
+            <Input id="password" name="password" type="password" placeholder="Enter a strong password" required />
           </div>
           <div className="space-y-2">
             <Label htmlFor="confirm_password">Confirm Password</Label>
@@ -111,12 +111,13 @@ export function AddAccountDialog() {
               id="confirm_password"
               name="confirm_password"
               type="password"
+              placeholder="Re-enter your password"
               required
             />
           </div>
           <div className="space-y-2">
             <Label htmlFor="vehiclePlateNumber">Vehicle Plate Number</Label>
-            <Input id="vehiclePlateNumber" name="vehiclePlateNumber" required />
+            <Input id="vehiclePlateNumber" name="vehiclePlateNumber" placeholder="ABC-1234" required />
           </div>
           <div className="space-y-2">
             <Label htmlFor="role">Role</Label>

@@ -95,6 +95,7 @@ export function EditAccountDialog({ open, onOpenChange, initialData }: EditAccou
                 name="first_name" 
                 value={formData.first_name}
                 onChange={handleChange}
+                placeholder="Enter first name"
                 required 
               />
             </div>
@@ -105,6 +106,7 @@ export function EditAccountDialog({ open, onOpenChange, initialData }: EditAccou
                 name="last_name" 
                 value={formData.last_name}
                 onChange={handleChange}
+                placeholder="Enter last name"
                 required 
               />
             </div>
@@ -116,6 +118,7 @@ export function EditAccountDialog({ open, onOpenChange, initialData }: EditAccou
               name="vehicle_plate_number" 
               value={formData.vehicle_plate_number}
               onChange={handleChange}
+              placeholder="Enter vehicle plate number"
               required 
             />
           </div>
