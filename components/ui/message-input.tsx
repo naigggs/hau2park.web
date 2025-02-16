@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils"
 import { useAutosizeTextArea } from "@/hooks/use-autosize-textarea"
 import { Button } from "@/components/ui/button"
 import { FilePreview } from "@/components/ui/file-preview"
+import { VoiceRecorder } from "./voice-recorder"
 
 interface MessageInputBaseProps
   extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
@@ -17,6 +18,7 @@ interface MessageInputBaseProps
   stop?: () => void
   isGenerating: boolean
   enableInterrupt?: boolean
+  onVoiceInput?: (text: string) => void
 }
 
 interface MessageInputWithoutAttachmentProps extends MessageInputBaseProps {
@@ -41,6 +43,7 @@ export function MessageInput({
   stop,
   isGenerating,
   enableInterrupt = true,
+  onVoiceInput,
   ...props
 }: MessageInputProps) {
   const [isDragging, setIsDragging] = useState(false)
@@ -225,6 +228,10 @@ export function MessageInput({
             <Paperclip className="h-4 w-4" />
           </Button>
         )}
+        <VoiceRecorder
+          onTranscription={onVoiceInput || (() => {})}
+          className="h-8 w-8"
+        />
         {isGenerating && stop ? (
           <Button
             type="button"

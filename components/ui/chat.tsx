@@ -27,6 +27,7 @@ interface ChatPropsBase {
     messageId: string,
     rating: "thumbs-up" | "thumbs-down"
   ) => void
+  onVoiceInput?: (text: string) => void
 }
 
 interface ChatPropsWithoutSuggestions extends ChatPropsBase {
@@ -52,6 +53,7 @@ export function Chat({
   suggestions,
   className,
   onRateResponse,
+  onVoiceInput,
 }: ChatProps) {
   const lastMessage = messages.at(-1)
   const isEmpty = messages.length === 0
@@ -129,6 +131,7 @@ export function Chat({
             stop={stop}
             isGenerating={isGenerating}
             enableInterrupt={true}
+            onVoiceInput={onVoiceInput}
           />
         )}
       </ChatForm>

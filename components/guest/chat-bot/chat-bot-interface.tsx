@@ -172,6 +172,16 @@ export default function ChatPage() {
     [input, handleMessage, createMessage]
   );
 
+  const handleVoiceInput = useCallback(
+    (text: string) => {
+      setInput(text);
+      setTimeout(() => {
+        handleSubmit();
+      }, 100);
+    },
+    [handleSubmit]
+  );
+
   const append = useCallback(
     async (message: { role: "user"; content: string }) => {
       const userMessage = createMessage(message.content);
@@ -201,6 +211,7 @@ export default function ChatPage() {
         isGenerating={isGenerating}
         append={append}
         suggestions={suggestions}
+        onVoiceInput={handleVoiceInput}
       />
     </div>
   );
