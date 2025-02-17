@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react';
 import { Mic, Square, Loader2 } from 'lucide-react';
 import { Button } from './button';
+import { combineChunks } from '@supabase/ssr';
 
 interface VoiceRecorderProps {
   onTranscription: (text: string) => void;

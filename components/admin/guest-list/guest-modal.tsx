@@ -18,6 +18,8 @@ interface GuestModalProps {
 }
 
 export function GuestModal({ guest, onClose }: Readonly<GuestModalProps>) {
+  const { toast } = useToast();
+  
   if (!guest) return null;
 
   const formatDate = (dateString: string) => {
@@ -61,8 +63,6 @@ export function GuestModal({ guest, onClose }: Readonly<GuestModalProps>) {
       }
     }
   };
-
-  const { toast } = useToast();
 
   return (
     <Dialog open={!!guest} onOpenChange={onClose}>

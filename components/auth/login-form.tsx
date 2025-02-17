@@ -17,24 +17,24 @@ export function LoginForm({
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-
     const formData = new FormData(event.currentTarget);
+    
     try {
-        await Login(formData);
+      await Login(formData);
       toast({
         title: "Login Success!",
         description: "You have successfully logged in.",
         className: "bg-green-500 text-white",
       });
     } catch (error) {
-      console.error("Login failed:", error);
       toast({
         variant: "destructive",
         title: "Login failed",
-        description: "Invalid email or password. Please try again.",
+        description: error instanceof Error ? error.message : "Invalid email or password. Please try again.",
       });
     }
   }
+
   return (
     <form
       onSubmit={handleSubmit}
