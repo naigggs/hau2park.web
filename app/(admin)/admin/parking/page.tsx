@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ParkingSpaceCard } from "@/components/admin/parking/parking-space-card";
+import { ParkingSpaceCard } from "@/components/shared/parking/parking-space-card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RefreshCw } from "lucide-react";
@@ -16,7 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useParkingSpaces } from "@/hooks/use-parking-space";
-import { ParkingSpaceModal } from "@/components/admin/parking/parking-space-modal";
+import { ParkingSpaceModal } from "@/components/shared/parking/parking-space-modal";
 import ParkingListLoading from "@/components/shared/loading/parking-list";
 
 export default function ParkingSpacesPage() {
