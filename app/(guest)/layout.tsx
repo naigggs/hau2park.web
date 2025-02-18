@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 import { Poppins, Inter } from "next/font/google";
+import { ToastProvider } from "@/components/ui/toast";
 import { Toaster } from "@/components/ui/toaster";
 import "@/app/shared/css/globals.css";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { createClient } from "@/utils/supabase/server";
-import { redirect } from "next/navigation";
 import { AppSidebar } from "@/components/guest/sidebar/app-sidebar";
 import Header from "@/components/shared/header/header";
 import { UserProvider } from "../context/user-context";
+import RealtimeListener from "@/components/shared/realtime-listener/realtime-listener";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -33,14 +33,19 @@ export default async function GuestLayout({
   return (
     <html lang="en">
       <body className={`${inter.variable} antialiased`}>
-        <SidebarProvider>
-          <AppSidebar />
-          <SidebarInset>
-            <Header />
-            <UserProvider>{children}</UserProvider>
-            <Toaster />
-          </SidebarInset>
-        </SidebarProvider>
+        <UserProvider>
+          <ToastProvider>
+            <RealtimeListener />
+            <SidebarProvider>
+              <AppSidebar />
+              <SidebarInset>
+                <Header />
+                {children}
+                <Toaster />
+              </SidebarInset>
+            </SidebarProvider>
+          </ToastProvider>
+        </UserProvider>
       </body>
     </html>
   );
