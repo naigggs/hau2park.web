@@ -13,7 +13,6 @@ export function useRealtimeParkingSpace() {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Only set up subscription if user info is available
     if (!firstName || !lastName) return;
 
     const channel = supabase.channel("parking_user_update");
@@ -25,7 +24,7 @@ export function useRealtimeParkingSpace() {
         async (payload) => {
           if (payload.new.user === `${user}` && payload.new.status === 
             "Occupied"
-          ) {
+          ){
             toast({
               title: "Parking Verification",
               description: `Did you park in space ${payload.new.name} at ${payload.new.location}?`,
@@ -44,7 +43,7 @@ export function useRealtimeParkingSpace() {
                       try {
                         const { error } = await supabase
                           .from("parking_spaces")
-                          .update({ user: "None" })
+                          .update({ user: "None", allocated_at: null })
                           .eq("id", payload.new.id);
 
                         if (error) throw error;

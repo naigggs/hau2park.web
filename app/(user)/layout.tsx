@@ -8,6 +8,8 @@ import { redirect } from "next/navigation";
 import { AppSidebar } from "@/components/user/sidebar/app-sidebar";
 import Header from "@/components/shared/header/header";
 import { UserProvider } from "../context/user-context";
+import { ToastProvider } from "@/components/ui/toast";
+import RealtimeListener from "@/components/shared/realtime-listener/realtime-listener";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -33,14 +35,19 @@ export default async function UserLayout({
   return (
     <html lang="en">
       <body className={`${inter.variable} antialiased`}>
-        <SidebarProvider>
-          <AppSidebar />
-          <SidebarInset>
-            <Header />
-            <UserProvider>{children}</UserProvider>
-            <Toaster />
-          </SidebarInset>
-        </SidebarProvider>
+        <UserProvider>
+                 <ToastProvider>
+                   <RealtimeListener />
+                   <SidebarProvider>
+                     <AppSidebar />
+                     <SidebarInset>
+                       <Header />
+                       {children}
+                       <Toaster />
+                     </SidebarInset>
+                   </SidebarProvider>
+                 </ToastProvider>
+               </UserProvider>
       </body>
     </html>
   );
