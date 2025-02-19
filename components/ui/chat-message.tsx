@@ -173,13 +173,23 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
       audio.onpause = () => setIsPlaying(false);
       audio.onplay = () => setIsPlaying(true);
   
-      await audio.play();
+      try {
+        await audio.play();
+      } catch (playError: any) {
+        // Silently handle AbortError since it's expected when audio is interrupted
+        if (playError.name !== 'AbortError') {
+          console.error('Playback error:', playError);
+        }
+      }
     } catch (error) {
-      console.error('TTS error:', error);
+      // Only log non-abort errors
+      if (error instanceof Error && error.name !== 'AbortError') {
+        console.error('TTS error:', error);
+      }
     } finally {
       setIsLoading(false);
     }
-  };
+};
   
   // Update the cleanup effect
   useEffect(() => {
