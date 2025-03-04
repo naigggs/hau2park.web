@@ -1,6 +1,6 @@
-import { GalleryVerticalEnd } from "lucide-react"
-import { SignUpForm } from "@/components/auth/sign-up-form"
-import Image from "next/image"
+import { GalleryVerticalEnd } from "lucide-react";
+import { SignUpForm } from "@/components/auth/sign-up-form";
+import Image from "next/image";
 
 export default function SignUpPage() {
   return (
@@ -11,7 +11,7 @@ export default function SignUpPage() {
             <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary text-primary-foreground">
               <GalleryVerticalEnd className="size-4" />
             </div>
-            Ticket System
+            Parking Management System
           </a>
         </div>
         <div className="flex flex-1 items-center justify-center">
@@ -30,5 +30,5 @@ export default function SignUpPage() {
         />
       </div>
     </div>
-  )
+  );
 }

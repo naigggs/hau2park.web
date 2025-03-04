@@ -1,12 +1,13 @@
 "use client"
 
-import React, { useMemo } from "react"
+import React, { useMemo, useState, useRef, useEffect } from "react"
 import { cva, type VariantProps } from "class-variance-authority"
-import { Code2, Loader2, Terminal, Map } from "lucide-react"
+import { Code2, Loader2, Terminal, Map, Play, Pause, Volume2 } from "lucide-react"
 import ChatbotMapsRoute from "./google-map-chat-message"
 import { cn } from "@/lib/utils"
 import { FilePreview } from "@/components/ui/file-preview"
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer"
+import { Button } from "./button"
 
 const chatBubbleVariants = cva(
   "group/message relative break-words rounded-lg p-3 text-sm sm:max-w-[70%]",
@@ -59,7 +60,7 @@ interface Attachment {
   name?: string
   contentType?: string
   url: string
-  mapData?: MapData // Add this to extend the existing Attachment type
+  mapData?: MapData
 }
 
 interface PartialToolCall {
@@ -107,6 +108,11 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
   experimental_attachments,
   toolInvocations,
 }) => {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
   const files = useMemo(() => {
     return experimental_attachments?.filter(att => !att.mapData).map((attachment) => {
       const dataArray = dataUrlToUint8Array(attachment.url)
@@ -116,6 +122,89 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
   }, [experimental_attachments])
 
   const mapAttachment = experimental_attachments?.find(att => att.mapData)
+
+  const [hasInitialized, setHasInitialized] = useState(false);
+
+  useEffect(() => {
+    if (role === 'assistant' && !hasInitialized) {
+      setHasInitialized(true);
+      handleTTS();
+    }
+  }, [role, hasInitialized]); // Add dependencies
+  
+  const handleTTS = async () => {
+    if (role !== 'assistant') return;
+  
+    try {
+      setIsLoading(true);
+  
+      // Clean up previous audio and URL
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.src = '';
+        audioRef.current = null;
+      }
+      if (audioUrl) {
+        URL.revokeObjectURL(audioUrl);
+        setAudioUrl(null);
+      }
+  
+      const response = await fetch('/api/chat/tts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: content }),
+      });
+  
+      if (!response.ok) throw new Error('Failed to generate speech');
+  
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      setAudioUrl(url);
+  
+      const audio = new Audio(url);
+      audioRef.current = audio;
+      
+      audio.onended = () => {
+        setIsPlaying(false);
+        URL.revokeObjectURL(url);
+        setAudioUrl(null);
+      };
+  
+      audio.onpause = () => setIsPlaying(false);
+      audio.onplay = () => setIsPlaying(true);
+  
+      try {
+        await audio.play();
+      } catch (playError: any) {
+        // Silently handle AbortError since it's expected when audio is interrupted
+        if (playError.name !== 'AbortError') {
+          console.error('Playback error:', playError);
+        }
+      }
+    } catch (error) {
+      // Only log non-abort errors
+      if (error instanceof Error && error.name !== 'AbortError') {
+        console.error('TTS error:', error);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+};
+  
+  // Update the cleanup effect
+  useEffect(() => {
+    const currentAudio = audioRef.current;
+    
+    return () => {
+      if (currentAudio) {
+        currentAudio.pause();
+        currentAudio.src = '';
+      }
+      if (audioUrl) {
+        URL.revokeObjectURL(audioUrl);
+      }
+    };
+  }, [audioUrl]);
 
   if (toolInvocations && toolInvocations.length > 0) {
     return <ToolCall toolInvocations={toolInvocations} />
@@ -138,7 +227,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
         </div>
       ) : null}
 
-      <div className={cn(chatBubbleVariants({ isUser, animation }), className)}>
+      <div className={cn(chatBubbleVariants({ isUser, animation }), className, "relative")}>
         <div>
           <MarkdownRenderer>{content}</MarkdownRenderer>
         </div>
@@ -154,6 +243,26 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
               destination={mapAttachment.mapData.destination}
               apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!}
             />
+          </div>
+        )}
+
+        {role === "assistant" && (
+          <div className="absolute -top-2 -right-2 flex space-x-1">
+            <Button
+              size="icon"
+              variant="outline"
+              onClick={handleTTS}
+              className="h-6 w-6 rounded-full"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : isPlaying ? (
+                <Pause className="h-3 w-3" />
+              ) : (
+                <Volume2 className="h-3 w-3" />
+              )}
+            </Button>
           </div>
         )}
 

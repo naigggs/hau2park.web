@@ -4,6 +4,7 @@ import {
   TicketPlus,
   RadioTower,
   NotebookPen,
+  ScanQrCode,
 } from "lucide-react";
 
 export const data = {
@@ -16,9 +17,21 @@ export const data = {
   ],
   navMain: [
     {
-      title: "Submit Ticket",
-      url: "/staff/qr-parking",
+      title: "Dashboard",
+      url: "/staff/dashboard",
+      icon: SquareTerminal,
+      isActive: true,
+    },
+    {
+      title: "Parking",
+      url: "/staff/parking",
       icon: TicketPlus,
+      isActive: true,
+    },
+    {
+      title: "QR Code Scanner",
+      url: "/staff/qr-parking",
+      icon: ScanQrCode,
       isActive: true,
     },
   ],

@@ -3,10 +3,17 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
+import { headers } from "next/headers";
 
-export async function SubmitGuestParkingRequest(formData: FormData, req: Request) {
+export async function SubmitGuestParkingRequest(formData: FormData) {
   const supabase = await createClient();
-  const userId = req.headers.get("user_id");
+  const headersList = await headers();
+  const userId = headersList.get("user_id");
+
+  if (!userId) {
+    throw new Error("User not authenticated");
+  }
+
   const data = {
     title: formData.get("title") as string,
     purpose: formData.get("purpose") as string,
