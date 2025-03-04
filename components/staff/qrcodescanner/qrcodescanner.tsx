@@ -16,7 +16,6 @@ const QrCodeScanner: React.FC = () => {
                     const parsedData = JSON.parse(result);
                     const supabase = createClient();
 
-                    // Check if there's existing QR code data first
                     const { data: qrCodeData, error: qrCheckError } = await supabase
                         .from("guest_qr_codes")
                         .select("*")

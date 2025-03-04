@@ -6,7 +6,8 @@ export const updateVisitorApprovalStatus = async (
   id: number,
   status: string,
   email: string,
-  user_id: string
+  user_id: string,
+  appointment_date: string
 ) => {
   const generateRandomKey = (length: number): string => {
     const characters =
@@ -60,6 +61,7 @@ export const updateVisitorApprovalStatus = async (
     user_id: user_id,
     qr_code_url: qrCodeDataUrl,
     secret_key: qrData.secret_key,
+    appointment_date: appointment_date,
   });
 
   if (qrError) {
