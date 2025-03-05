@@ -92,7 +92,6 @@ Admins can log in via the "Admin Login" button. The dashboard provides an overvi
 Admins can navigate through various sections including:
 - **Request Management**: View and manage parking requests.
 - **User Management**: Manage user roles and permissions.
-- **System Settings**: Configure system preferences and security settings.
 
 ### 5.3 Managing and Approving Requests
 Admins can view, approve, or reject parking requests. They can also manage user roles, assign parking spaces, and handle any parking-related issues. Approval notifications are sent to users via email.
