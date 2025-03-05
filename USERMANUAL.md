@@ -68,12 +68,13 @@ After the QR code is scanned by the guard or admin:
 **Important Notes**:
 - QR Code is valid only for the approved date and time.
 - Unauthorized parking or misuse of the QR Code may result in penalties or future access restrictions.
-- If you experience any issues, contact HAU2PARK AI Support.
+- If you experience any issues, contact hau2park@gmail.com
 
 ## User Registration and Access
 ### 4.1 Registering as a HAU2PARK User
 New users can register by clicking on the "Sign Up" button and filling out the registration form with their details, including:
 - **Full Name**
+- **License Plate**
 - **Email Address**
 - **Password**
 
