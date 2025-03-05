@@ -11,14 +11,16 @@ HAU2PARK is an advanced AI-driven parking management system designed to streamli
 
 ## Getting Started
 ### 2.1 System Requirements
+- **Mobile device** mandatory for users
+- **Mobile device/Computer** for admins
 - Internet connection
 - Modern web browser (Chrome, Firefox, Safari)
 - QR code reader (for guests)
 - Admin access credentials (for administrators)
-- **Mobile device** (mandatory for users driving)
+
 
 ### 2.2 Accessing HAU2PARK AI
-Access the HAU2PARK AI system via the provided URL and log in with your credentials.
+Access the HAU2PARK AI system via the provided URL and log in with your credentials. The app can also be installed as an application for your mobile device for ease of access.
 
 ### 2.3 Navigation Overview
 The system features a user-friendly interface with clear navigation for all roles, including sections for requests, approvals, and real-time monitoring. The main menu includes options for Dashboard, Requests, Users, and Settings.
