@@ -50,6 +50,7 @@ export async function GuestSignUp(formData: FormData) {
     firstName: formData.get("firstName") as string,
     lastName: formData.get("lastName") as string,
     vehiclePlateNumber: formData.get("vehiclePlateNumber") as string,
+    phone: formData.get("phone") as string,
   };
 
   const { data: guestData, error } = await supabase.auth.signUp(data);
@@ -75,6 +76,7 @@ export async function GuestSignUp(formData: FormData) {
     first_name: data.firstName,
     last_name: data.lastName,
     vehicle_plate_number: data.vehiclePlateNumber,
+    phone: data.phone,
   });
 
   if (profileError) {

@@ -8,5 +8,6 @@ interface EditAccountDialogProps {
       email: string;
       vehicle_plate_number: string;
       role_name: string;
+      phone:string
     };
   }

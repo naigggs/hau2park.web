@@ -7,6 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Login } from "@/app/api/auth/actions";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
+import { Spinner } from "@/components/shared/loading/spinner";
 
 export function LoginForm({
   className,
@@ -14,9 +16,11 @@ export function LoginForm({
 }: React.ComponentPropsWithoutRef<"form">) {
   const router = useRouter();
   const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setLoading(true);
     const formData = new FormData(event.currentTarget);
     
     try {
@@ -32,6 +36,8 @@ export function LoginForm({
         title: "Login failed",
         description: error instanceof Error ? error.message : "Invalid email or password. Please try again.",
       });
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -64,8 +70,15 @@ export function LoginForm({
           </div>
           <Input id="password" name="password" type="password" required />
         </div>
-        <Button type="submit" className="w-full">
-          Login
+        <Button type="submit" className="w-full" disabled={loading}>
+          {loading ? (
+            <span className="flex items-center justify-center gap-2">
+              <Spinner size="sm" />
+              Logging in...
+            </span>
+          ) : (
+            "Login"
+          )}
         </Button>
       </div>
       <div className="text-center text-sm">

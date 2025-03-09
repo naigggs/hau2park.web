@@ -17,6 +17,7 @@ interface UserWithRole {
   last_name: string;
   vehicle_plate_number: string;
   role_name: string;
+  phone:string
 }
 
 export function useUsers() {

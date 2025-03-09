@@ -2,6 +2,7 @@ interface User {
   user_id: string;
   first_name: string;
   last_name: string;
+  phone: string;
   vehicle_plate_number: string;
   email: string;
   role_id: string;

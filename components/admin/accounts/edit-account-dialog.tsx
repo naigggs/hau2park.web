@@ -123,6 +123,17 @@ export function EditAccountDialog({ open, onOpenChange, initialData }: EditAccou
             />
           </div>
           <div className="space-y-2">
+            <Label htmlFor="phone">Vehicle Plate Number</Label>
+            <Input 
+              id="phone" 
+              name="phone" 
+              value={formData.phone}
+              onChange={handleChange}
+              placeholder="Enter phone number"
+              required 
+            />
+          </div>
+          <div className="space-y-2">
             <Label htmlFor="role">Role</Label>
             <Select name="role" value={formData.role_name} onValueChange={handleRoleChange} required>
               <SelectTrigger>

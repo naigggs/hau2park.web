@@ -120,6 +120,10 @@ export function AddAccountDialog() {
             <Input id="vehiclePlateNumber" name="vehiclePlateNumber" placeholder="ABC-1234" required />
           </div>
           <div className="space-y-2">
+            <Label htmlFor="phone">Phone No.</Label>
+            <Input id="phone" name="phone" placeholder="09123456789" required />
+          </div>
+          <div className="space-y-2">
             <Label htmlFor="role">Role</Label>
             <Select name="role" required>
               <SelectTrigger>

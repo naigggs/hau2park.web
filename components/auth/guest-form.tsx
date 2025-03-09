@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import { GuestSignUp } from "@/app/api/auth/actions";
+import { Spinner } from "@/components/shared/loading/spinner";
 
 export function GuestForm({
   className,
@@ -35,7 +36,7 @@ export function GuestForm({
       onSubmit={handleSubmit}
     >
       <div className="flex flex-col items-center gap-2 text-center">
-        <h1 className="text-2xl font-bold">Submit a Guest Request</h1>
+        <h1 className="text-2xl font-bold">Guest Account Creation Request</h1>
         <p className="text-balance text-sm text-muted-foreground">
           Fill in your details below to create your guest request
         </p>
@@ -103,8 +104,25 @@ export function GuestForm({
             required
           />
         </div>
+
+        <div className="grid gap-2">
+          <Label htmlFor="phone">Phone No.</Label>
+          <Input
+            id="phone"
+            name="phone"
+            placeholder="09123456789"
+            required
+          />
+        </div>
         <Button type="submit" className="w-full" disabled={loading}>
-          {loading ? "Submitting..." : "Submit Request"}
+          {loading ? (
+            <span className="flex items-center justify-center gap-2">
+              <Spinner size="sm" />
+              Submitting...
+            </span>
+          ) : (
+            "Submit Request"
+          )}
         </Button>
       </div>
       <div className="text-center text-sm">

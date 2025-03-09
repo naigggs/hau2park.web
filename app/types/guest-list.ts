@@ -10,6 +10,7 @@ interface GuestList {
     last_name: string;
     email: string;
     vehicle_plate_number: string;
+    phone: string;
     user_id: string;
   };
   status: string;
