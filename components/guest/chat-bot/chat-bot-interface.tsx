@@ -150,38 +150,119 @@ export default function ChatPage() {
         const response = prompt.toLowerCase();
         if (response.includes('yes') || response.includes('yeah') || response.includes('sure')) {
           const supabase = createClient();
-          const { data: parkingData, error: fetchError } = await supabase
-            .from("parking_spaces")
-            .select("status")
-            .eq("name", awaitingParkingConfirmation)
+
+          // First check if user is a guest by querying user_roles
+          const { data: roleData, error: roleError } = await supabase
+            .from("user_roles")
+            .select("role")
+            .eq("user_id", userId)
             .single();
 
-          if (fetchError) {
+          if (roleError) {
             setAwaitingParkingConfirmation(null);
-            console.error('Error fetching parking space:', fetchError);
-            return 'Sorry, there was an error checking the parking space. Please try again.';
+            console.error('Error checking user role:', roleError);
+            return 'Sorry, there was an error verifying your account type. Please try again.';
           }
 
-          if (!parkingData || parkingData.status !== "Open") {
-            setAwaitingParkingConfirmation(null);
-            return `Sorry, parking space ${awaitingParkingConfirmation} is no longer available. Please choose another parking space.`;
-          }
+          // If user is a guest, get their latest parking request
+          if (roleData.role === "Guest") {
+            const { data: parkingRequest, error: requestError } = await supabase
+              .from("guest_parking_request")
+              .select("*")
+              .eq("user_id", userId)
+              .eq("status", "Approved")
+              .order('created_at', { ascending: false })
+              .limit(1)
+              .single();
 
-          const currentDateTime = new Date().toISOString().slice(0, 19).replace('T', ' ');
-          
-          const { error: updateError } = await supabase
-            .from("parking_spaces")
-            .update({
-              status: "Reserved",
-              user: `${firstName} ${lastName}`,
-              updated_at: currentDateTime,
-            })
-            .eq("name", awaitingParkingConfirmation);
+            if (requestError) {
+              setAwaitingParkingConfirmation(null);
+              console.error('Error fetching parking request:', requestError);
+              return 'Sorry, there was an error fetching your parking request. Please ensure you have an approved parking request.';
+            }
 
-          if (updateError) {
-            setAwaitingParkingConfirmation(null);
-            console.error('Error updating parking space:', updateError);
-            return 'Sorry, there was an error reserving the parking space. Please try again.';
+            if (!parkingRequest) {
+              setAwaitingParkingConfirmation(null);
+              return 'You need an approved parking request before you can park. Please submit a parking request first.';
+            }
+
+            // Check if trying to park outside of approved time window
+            const currentTime = new Date();
+            const parkingStartTime = new Date(parkingRequest.parking_start_time);
+            const parkingEndTime = new Date(parkingRequest.parking_end_time);
+
+            if (currentTime < parkingStartTime || currentTime > parkingEndTime) {
+              setAwaitingParkingConfirmation(null);
+              return `You can only park during your approved time window: ${parkingRequest.parking_start_time} to ${parkingRequest.parking_end_time}`;
+            }
+
+            // If within time window, proceed with parking space status check
+            const { data: parkingData, error: parkingError } = await supabase
+              .from("parking_spaces")
+              .select("status")
+              .eq("name", awaitingParkingConfirmation)
+              .single();
+
+            if (parkingError) {
+              setAwaitingParkingConfirmation(null);
+              console.error('Error fetching parking space:', parkingError);
+              return 'Sorry, there was an error checking the parking space. Please try again.';
+            }
+
+            if (!parkingData || parkingData.status !== "Open") {
+              setAwaitingParkingConfirmation(null);
+              return `Sorry, parking space ${awaitingParkingConfirmation} is no longer available. Please choose another parking space.`;
+            }
+
+            // Update parking space with guest end time
+            const { error: updateError } = await supabase
+              .from("parking_spaces")
+              .update({
+                status: "Reserved",
+                user: `${firstName} ${lastName}`,
+                updated_at: new Date().toISOString(),
+                parking_end_time: parkingRequest.parking_end_time
+              })
+              .eq("name", awaitingParkingConfirmation);
+
+            if (updateError) {
+              setAwaitingParkingConfirmation(null);
+              console.error('Error updating parking space:', updateError);
+              return 'Sorry, there was an error reserving the parking space. Please try again.';
+            }
+          } else {
+            // Regular user flow - just check parking space availability
+            const { data: parkingData, error: fetchError } = await supabase
+              .from("parking_spaces")
+              .select("status")
+              .eq("name", awaitingParkingConfirmation)
+              .single();
+
+            if (fetchError) {
+              setAwaitingParkingConfirmation(null);
+              console.error('Error fetching parking space:', fetchError);
+              return 'Sorry, there was an error checking the parking space. Please try again.';
+            }
+
+            if (!parkingData || parkingData.status !== "Open") {
+              setAwaitingParkingConfirmation(null);
+              return `Sorry, parking space ${awaitingParkingConfirmation} is no longer available. Please choose another parking space.`;
+            }
+
+            const { error: updateError } = await supabase
+              .from("parking_spaces")
+              .update({
+                status: "Reserved",
+                user: `${firstName} ${lastName}`,
+                updated_at: new Date().toISOString()
+              })
+              .eq("name", awaitingParkingConfirmation);
+
+            if (updateError) {
+              setAwaitingParkingConfirmation(null);
+              console.error('Error updating parking space:', updateError);
+              return 'Sorry, there was an error reserving the parking space. Please try again.';
+            }
           }
 
           const confirmedParking = awaitingParkingConfirmation;

@@ -29,13 +29,18 @@ export function ParkingStatus() {
     return new Date(dateString).toLocaleString();
   };
 
+  const isOvertime = (space: ParkingSpace) => {
+    if (!space.parking_end_time || space.status !== "Occupied") return false;
+    return new Date() > new Date(`${new Date().toDateString()} ${space.parking_end_time}`);
+  };
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium">Current Parking</CardTitle>
         <Car className="h-4 w-4 text-muted-foreground" />
       </CardHeader>
-      <CardContent>
+      <CardContent className="mt-5">
         {isLoading ? (
           <div className="space-y-2">
             <Skeleton className="h-4 w-full" />
@@ -71,15 +76,20 @@ export function ParkingStatus() {
               </div>
               <div className="flex items-center justify-center text-sm text-gray-500 mt-1">
                 <Clock className="h-3 w-3 mr-1 inline" />
-                Since: {formatDateTime(userParking.time_in)}
+                Since: {formatDateTime(userParking.allocated_at)}
               </div>
-              <div className="mt-2">
+              <div className="mt-2 flex flex-col items-center gap-2">
                 <span className={`inline-block px-2 py-1 text-xs rounded-full
                   ${userParking.status === "Reserved" 
                     ? "bg-yellow-100 text-yellow-800" 
                     : "bg-green-100 text-green-800"}`}>
                   {userParking.status}
                 </span>
+                {isOvertime(userParking) && (
+                  <span className="inline-block px-2 py-1 text-xs rounded-full bg-red-100 text-red-800">
+                    Overtime
+                  </span>
+                )}
               </div>
             </div>
           </div>

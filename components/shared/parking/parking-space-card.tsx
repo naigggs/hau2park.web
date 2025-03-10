@@ -1,6 +1,13 @@
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { TimerOff } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface ParkingSpaceCardProps {
   space: ParkingSpace;
@@ -10,6 +17,9 @@ interface ParkingSpaceCardProps {
 export function ParkingSpaceCard({ space, onClick }: ParkingSpaceCardProps) {
   const isIllegalParking = space.status === "Occupied" && space.user === "None";
   const isReserved = space.status === "Reserved" && space.user;
+  const hasTimeLimit = space.time_out !== null && space.time_out !== undefined;
+  const isOvertime = space.parking_end_time && space.status === "Occupied" && 
+    new Date() > new Date(`${new Date().toDateString()} ${space.parking_end_time}`);
 
   return (
     <motion.div
@@ -23,7 +33,21 @@ export function ParkingSpaceCard({ space, onClick }: ParkingSpaceCardProps) {
     >
       <Card className="h-full">
         <CardHeader>
-          <CardTitle>{space.name}</CardTitle>
+          <CardTitle className="flex items-center justify-between">
+            {space.name}
+            {hasTimeLimit && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <TimerOff className="h-4 w-4 text-muted-foreground" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Has time limit</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+          </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col items-center justify-center">
           <div className="relative">
@@ -54,6 +78,11 @@ export function ParkingSpaceCard({ space, onClick }: ParkingSpaceCardProps) {
           {isReserved && (
             <Badge variant="default" className="text-center uppercase">
               Reserved
+            </Badge>
+          )}
+          {isOvertime && (
+            <Badge variant="destructive" className="text-center uppercase mt-1">
+              Overtime
             </Badge>
           )}
           <p className="mt-4 text-sm text-gray-600">Status: {space.status}</p>
