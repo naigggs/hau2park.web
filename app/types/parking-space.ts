@@ -9,4 +9,6 @@ interface ParkingSpace {
     created_at: string;
     updated_at: string;
     location: string;
+    allocated_at: string;
+    parking_end_time: string;
 }

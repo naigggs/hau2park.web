@@ -7,11 +7,11 @@ export default function GuestsPage() {
       <h1 className="text-3xl font-bold tracking-tight">Guest Management</h1>
       <div className="flex flex-col gap-y-2">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Approvals</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Pending Approvals</h1>
           <GuestList />
         </div>
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">All Guest Users</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Approval History</h1>
           <AllGuestList />
         </div>
       </div>

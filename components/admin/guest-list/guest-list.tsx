@@ -13,10 +13,11 @@ import { Button } from "@/components/ui/button";
 import { GuestModal } from "./guest-modal";
 import GuestListLoading from "@/components/shared/loading/guest-list";
 import { useGuestListSubscription } from "@/hooks/use-guest-list-subscription";
+import type { GuestList as GuestListType } from "@/app/types/guest-list";
 
 export function GuestList() {
   const { guestList, error, loading } = useGuestListSubscription();
-  const [selectedGuest, setSelectedGuest] = useState<GuestList | null>(null);
+  const [selectedGuest, setSelectedGuest] = useState<GuestListType | null>(null);
 
   if (loading) {
     return <GuestListLoading />;
@@ -25,7 +26,9 @@ export function GuestList() {
   if (error) {
     return <div>Error loading guest list: {error.message}</div>;
   }
-  console.log(guestList);
+
+  const pendingApprovals = guestList.filter((guest) => guest.status === "Open");
+
   return (
     <div className="container mx-auto">
       <Table>
@@ -40,9 +43,8 @@ export function GuestList() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {guestList
-            .filter((guest) => guest.status === "Open")
-            .map((guest) => (
+          {pendingApprovals.length > 0 ? (
+            pendingApprovals.map((guest) => (
               <TableRow key={guest.id}>
                 <TableCell className="font-medium">
                   {guest.user_id.first_name} {guest.user_id.last_name}
@@ -57,7 +59,14 @@ export function GuestList() {
                   <Button onClick={() => setSelectedGuest(guest)}>View</Button>
                 </TableCell>
               </TableRow>
-            ))}
+            ))
+          ) : (
+            <TableRow>
+              <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">
+                No pending approvals
+              </TableCell>
+            </TableRow>
+          )}
         </TableBody>
       </Table>
 

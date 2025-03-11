@@ -1,0 +1,132 @@
+import { createClient } from "@/utils/supabase/client";
+import { PostgrestError, RealtimeChannel } from "@supabase/supabase-js";
+import { useEffect, useState } from "react";
+
+interface LocationStats {
+  name: string;
+  totalSpaces: number;
+  occupiedSpaces: number;
+  reservedSpaces: number;
+  activeUsers: number;
+}
+
+interface ActiveUser {
+  id: number;
+  name: string;
+  vehicle_plate_number: string;
+  entryTime: string;
+  status: "Parked" | "Looking";
+}
+
+export const useDashboardParking = () => {
+  const [locations, setLocations] = useState<LocationStats[]>([]);
+  const [activeUsers, setActiveUsers] = useState<ActiveUser[]>([]);
+  const [error, setError] = useState<PostgrestError | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const supabase = createClient();
+
+  const fetchData = async () => {
+    setIsLoading(true);
+    try {
+      // Fetch all parking spaces
+      const { data: parkingSpaces, error: parkingError } = await supabase
+        .from("parking_spaces")
+        .select("*")
+        .order("id", { ascending: true });
+
+      if (parkingError) throw parkingError;
+
+      // Group parking spaces by location and calculate stats
+      const locationMap = new Map<string, LocationStats>();
+
+      parkingSpaces.forEach((space) => {
+        const locationName = space.location || "Unknown";
+        const current = locationMap.get(locationName) || {
+          name: locationName,
+          totalSpaces: 0,
+          occupiedSpaces: 0,
+          reservedSpaces: 0,
+          activeUsers: 0,
+        };
+
+        current.totalSpaces++;
+        if (space.status === "Occupied") {
+          current.occupiedSpaces++;
+          if (space.user && space.user !== "None") {
+            current.activeUsers++;
+          }
+        } else if (space.status === "Reserved") {
+          current.reservedSpaces++;
+          if (space.user && space.user !== "None") {
+            current.activeUsers++;
+          }
+        }
+
+        locationMap.set(locationName, current);
+      });
+
+      // Convert active users to the required format
+      const users = parkingSpaces
+        .filter((space) => space.user && space.user !== "None")
+        .map((space) => ({
+          id: space.id,
+          name: space.user,
+          vehicle_plate_number: space.user.vehicle_plate_number || "Unknown",
+          entryTime: new Date(space.time_in || space.allocated_at || space.updated_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          status: space.verified_by_user ? "Parked" : "Looking"
+        } as ActiveUser));
+
+        console.log(users);
+
+      setLocations(Array.from(locationMap.values()));
+      setActiveUsers(users);
+      setError(null);
+    } catch (err) {
+      setError(err as PostgrestError);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    let parkingChannel: RealtimeChannel;
+
+    const setupSubscription = async () => {
+      // Initial fetch
+      await fetchData();
+
+      // Set up realtime subscription
+      parkingChannel = supabase
+        .channel('dashboard_changes')
+        .on('postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'parking_spaces'
+          },
+          () => {
+            // Refetch all data when any change occurs
+            fetchData();
+          }
+        )
+        .subscribe();
+    };
+
+    setupSubscription();
+
+    // Cleanup subscription when component unmounts
+    return () => {
+      if (parkingChannel) {
+        supabase.removeChannel(parkingChannel);
+      }
+    };
+  }, []);
+
+  return {
+    locations,
+    activeUsers,
+    error,
+    isLoading,
+    refresh: fetchData
+  };
+};
