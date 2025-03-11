@@ -1,4 +1,4 @@
-interface GuestList {
+export interface GuestList {
   id: number;
   title: string;
   appointment_date: string;

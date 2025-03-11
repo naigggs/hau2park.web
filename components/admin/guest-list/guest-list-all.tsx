@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { GuestModal } from "./guest-modal";
 import GuestListLoading from "@/components/shared/loading/guest-list";
 import { useGuestListSubscription } from "@/hooks/use-guest-list-subscription";
+import { GuestList } from "@/app/types/guest-list";
 
 export function AllGuestList() {
   const { guestList, error, loading } = useGuestListSubscription(); 

@@ -13,10 +13,11 @@ import { Button } from "@/components/ui/button";
 import { GuestModal } from "./guest-modal";
 import GuestListLoading from "@/components/shared/loading/guest-list";
 import { useGuestListSubscription } from "@/hooks/use-guest-list-subscription";
+import type { GuestList as GuestListType } from "@/app/types/guest-list";
 
 export function GuestList() {
   const { guestList, error, loading } = useGuestListSubscription();
-  const [selectedGuest, setSelectedGuest] = useState<GuestList | null>(null);
+  const [selectedGuest, setSelectedGuest] = useState<GuestListType | null>(null);
 
   if (loading) {
     return <GuestListLoading />;
