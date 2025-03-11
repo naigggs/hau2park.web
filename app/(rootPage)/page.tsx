@@ -12,8 +12,6 @@ export default function LandingPage() {
       <main className="flex-grow">
         <Hero />
         <Features />
-        <Testimonials />
-        <Chatbot />
       </main>
       <Footer />
     </div>
