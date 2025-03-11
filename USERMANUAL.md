@@ -34,7 +34,7 @@ Before arriving on campus, guests must submit a parking request through the HAU2
 3. Fill in the required details:
    - **Full Name**
    - **Contact Information** (Email and Phone Number)
-   - **Vehicle Information** (Make, Model, License Plate Number)
+   - **Vehicle Information** (License Plate Number)
    - **Date and Time of Visit**
    - **Purpose of Visit**
 4. Submit the form and wait for approval from the Admin Team.
@@ -50,6 +50,7 @@ If your request is approved:
 - You will receive an email or mobile app notification containing a QR Code.
 - This QR Code will serve as your digital parking pass.
 - Ensure that you save or screenshot the QR Code for easy access.
+- The QR is also available in the application
 
 ### 3.4 Presenting the QR Code to Security
 Upon arrival at the school campus:
