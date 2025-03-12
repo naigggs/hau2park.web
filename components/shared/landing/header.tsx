@@ -126,7 +126,7 @@ export default function Header() {
             <div className="flex items-center space-x-2">
               <div className="relative h-8 w-8">
                 <Image
-                  src="/HAU2PARK User Manual.svg"
+                  src="/hau2park-logo.svg"
                   alt="HAU2PARK Logo"
                   fill
                   className="object-contain"
