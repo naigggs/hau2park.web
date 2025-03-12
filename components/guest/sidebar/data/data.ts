@@ -2,14 +2,15 @@ import {
   GalleryVerticalEnd,
   SquareTerminal,
   QrCode,
-  Bot
+  Bot,
+  CarFront
 } from "lucide-react";
 
 export const data = {
   teams: [
     {
       name: "HAU2Park",
-      logo: GalleryVerticalEnd,
+      logo: CarFront,
       plan: "Parking Management System",
     },
   ],
