@@ -1,16 +1,16 @@
 import {
-  GalleryVerticalEnd,
   SquareTerminal,
   TicketPlus,
   RadioTower,
-  NotebookPen
+  NotebookPen,
+  CarFront
 } from "lucide-react";
 
 export const data = {
   teams: [
     {
       name: "HAU2Park",
-      logo: GalleryVerticalEnd,
+      logo: CarFront,
       plan: "Parking Management System",
     },
   ],

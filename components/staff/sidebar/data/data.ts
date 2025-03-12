@@ -5,13 +5,14 @@ import {
   RadioTower,
   NotebookPen,
   ScanQrCode,
+  CarFront
 } from "lucide-react";
 
 export const data = {
   teams: [
     {
       name: "HAU2Park",
-      logo: GalleryVerticalEnd,
+      logo: CarFront,
       plan: "Parking Management System",
     },
   ],
