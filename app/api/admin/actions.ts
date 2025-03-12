@@ -263,3 +263,143 @@ export async function updateUser(formData: FormData) {
     return { error: "An unexpected error occurred" };
   }
 }
+
+export const approveAccount = async (id: number, user_id: string) => {
+  const supabase = createClient();
+
+  try {
+    // Get the signup data first
+    const { data: signupData, error: signupError } = await supabase
+      .from("account_sign_up")
+      .select("*")
+      .eq("id", id)
+      .single();
+
+    if (signupError) {
+      console.error("Error fetching signup data:", signupError);
+      return { error: signupError.message };
+    }
+
+    // Create user in Auth
+    const { data: authData, error: authError } = await supabaseAdminClient.auth.admin.createUser({
+      email: signupData.email,
+      password: signupData.password,
+      email_confirm: true,
+    });
+
+    if (authError) {
+      console.error("Error creating user in auth:", authError);
+      return { error: authError.message };
+    }
+
+    const userId = authData.user.id;
+
+    // Create user info
+    const { error: userError } = await supabase.from("user_info").insert({
+      user_id: userId,
+      email: signupData.email,
+      first_name: signupData.first_name,
+      last_name: signupData.last_name,
+      vehicle_plate_number: signupData.vehicle_plate_number,
+      phone: signupData.phone
+    });
+
+    if (userError) {
+      console.error("Error creating user info:", userError);
+      return { error: userError.message };
+    }
+
+    // Set user role
+    const { error: roleError } = await supabase.from("user_roles").insert({
+      user_id: userId,
+      role: "User"
+    });
+
+    if (roleError) {
+      console.error("Error setting user role:", roleError);
+      return { error: roleError.message };
+    }
+
+    // Delete signup data
+    const { error: deleteError } = await supabase
+      .from("account_sign_up")
+      .delete()
+      .eq("id", id);
+
+    if (deleteError) {
+      console.error("Error deleting signup data:", deleteError);
+      return { error: deleteError.message };
+    }
+
+    // Send email notification
+    const emailPayload = {
+      to: signupData.email,
+      subject: "Account Registration Approved",
+      html: `
+        <h1 style="text-align: center; font-family: Arial, sans-serif; color: #333;">HAU2Park</h1>
+        <p>Your account registration has been approved. You can now log in using your email and password.</p>
+      `
+    };
+
+    await fetch("/api/admin/sendEmail", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(emailPayload),
+    });
+
+    return { success: true, userId };
+  } catch (error) {
+    console.error("Unexpected error during approval:", error);
+    return { error: "An unexpected error occurred" };
+  }
+};
+
+export const declineAccount = async (id: number) => {
+  const supabase = createClient();
+
+  try {
+    // Get the signup data first for the email
+    const { data: signupData, error: signupError } = await supabase
+      .from("account_sign_up")
+      .select("email")
+      .eq("id", id)
+      .single();
+
+    if (signupError) {
+      console.error("Error fetching signup data:", signupError);
+      return { error: signupError.message };
+    }
+
+    // Delete signup data
+    const { error: deleteError } = await supabase
+      .from("account_sign_up")
+      .delete()
+      .eq("id", id);
+
+    if (deleteError) {
+      console.error("Error deleting signup data:", deleteError);
+      return { error: deleteError.message };
+    }
+
+    // Send email notification
+    const emailPayload = {
+      to: signupData.email,
+      subject: "Account Registration Declined",
+      html: `
+        <h1 style="text-align: center; font-family: Arial, sans-serif; color: #333;">HAU2Park</h1>
+        <p>We regret to inform you that your account registration has been declined. If you believe this is an error, please contact our support team.</p>
+      `
+    };
+
+    await fetch("/api/admin/sendEmail", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(emailPayload),
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error("Unexpected error during decline:", error);
+    return { error: "An unexpected error occurred" };
+  }
+};
