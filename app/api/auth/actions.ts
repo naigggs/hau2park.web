@@ -86,3 +86,60 @@ export async function GuestSignUp(formData: FormData) {
   revalidatePath("/guest/qr-code", "layout");
   redirect("/guest/qr-code");
 }
+
+export async function registerUser(formData: FormData) {
+  const supabase = await createClient();
+
+  // Get form data
+  const email = formData.get("email") as string;
+  const password = formData.get("password") as string;
+  const firstName = formData.get("firstName") as string;
+  const lastName = formData.get("lastName") as string;
+  const vehiclePlateNumber = formData.get("vehicle_plate_number") as string;
+  const phone = formData.get("phone") as string;
+  const document1 = formData.get("document1") as File;
+
+  // First, insert into account_sign_up table
+  const { error: signupError } = await supabase
+    .from("account_sign_up")
+    .insert({
+      email: email,
+      password: password,
+      first_name: firstName,
+      last_name: lastName,
+      vehicle_plate_number: vehiclePlateNumber,
+      phone: phone,
+      id_link: null 
+    });
+
+  if (signupError) {
+   console.log("Error signing up", signupError);
+  }
+
+  // Handle document upload if provided
+  if (document1) {
+    const fileExt = document1.name.split(".").pop();
+    const fileName = `${email}-id.${fileExt}`;
+    
+    const { error: uploadError } = await supabase.storage
+      .from("user-documents")
+      .upload(fileName, document1);
+
+    if (uploadError) {
+      console.log("Error uploading document", uploadError);
+    }
+
+    // Update the account_sign_up record with the document URL
+    const { data: { publicUrl } } = supabase.storage
+      .from("hau2park")
+      .getPublicUrl(fileName);
+
+    await supabase
+      .from("account_sign_up")
+      .update({ id_link: publicUrl })
+      .eq("email", email);
+  }
+
+  revalidatePath("/auth/login");
+  redirect("/auth/login?message=Registration pending approval");
+}
