@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, Suspense } from "react";
+import { useState, useEffect, useRef } from "react";
 import QRCodeList from "@/components/guest/qr-code-list/qr-code-list";
 import { GenerateQRCodeModal } from "@/components/guest/qr-code-list/qr-code-modal-create";
 import { Button } from "@/components/ui/button";
@@ -33,8 +33,7 @@ interface PendingRequest {
   parking_end_time: string;
 }
 
-// Component that uses useSearchParams
-function QRCodePageContent() {
+export default function QRCodesPage() {
   const [isGenerateModalOpen, setIsGenerateModalOpen] = useState(false);
   const { toast } = useToast();
   const searchParams = useSearchParams();
@@ -420,24 +419,5 @@ function QRCodePageContent() {
         onSuccess={handleRefresh}
       />
     </div>
-  );
-}
-
-// Main page component with Suspense boundary
-export default function QRCodesPage() {
-  return (
-    <Suspense fallback={
-      <div className="container mx-auto px-4 py-8">
-        <div className="animate-pulse">
-          <div className="h-8 w-48 bg-gray-200 rounded mb-6"></div>
-          <div className="space-y-4">
-            <div className="h-40 bg-gray-200 rounded"></div>
-            <div className="h-40 bg-gray-200 rounded"></div>
-          </div>
-        </div>
-      </div>
-    }>
-      <QRCodePageContent />
-    </Suspense>
   );
 }
