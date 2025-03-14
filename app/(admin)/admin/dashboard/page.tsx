@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, Suspense } from "react"
 import { Car, Clock } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
@@ -122,7 +122,9 @@ export default function ParkingDashboard() {
                       {(currentLocation?.occupiedSpaces || 0) + (currentLocation?.reservedSpaces || 0)} / {currentLocation?.totalSpaces || 0} spaces
                     </span>
                   </div>
-                  <Progress value={occupancyRate} className="h-2" />
+                  <Suspense fallback={<div className="h-2 w-full bg-muted animate-pulse rounded-full"></div>}>
+                    <Progress value={occupancyRate} className="h-2" />
+                  </Suspense>
                   <div className="grid grid-cols-3 gap-4 mt-4">
                     <div className="flex flex-col items-center p-3 border rounded-lg">
                       <span className="text-xs text-muted-foreground">Occupied</span>
@@ -325,4 +327,3 @@ export default function ParkingDashboard() {
     </div>
   )
 }
-

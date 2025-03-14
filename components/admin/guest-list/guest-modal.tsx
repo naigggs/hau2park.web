@@ -26,6 +26,7 @@ import {
   Tag,
   Phone
 } from "lucide-react";
+import { GuestList } from "@/app/types/guest-list";
 
 interface GuestModalProps {
   guest: GuestList | null;

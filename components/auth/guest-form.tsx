@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { GuestSignUp } from "@/app/api/auth/actions";
 import { Spinner } from "@/components/shared/loading/spinner";
 import { Progress } from "@/components/ui/progress";
@@ -249,7 +249,9 @@ export function GuestForm({
 
       {/* Progress Indicator */}
       <div className="w-full">
-        <Progress value={(step / totalSteps) * 100} className="mb-4" />
+        <Suspense fallback={<div className="h-4 w-full bg-muted mb-4 rounded-full animate-pulse"></div>}>
+          <Progress value={(step / totalSteps) * 100} className="mb-4" />
+        </Suspense>
         <p className="text-center text-sm text-muted-foreground">
           Step {step} of {totalSteps}
         </p>
@@ -342,15 +344,17 @@ export function GuestForm({
                   </button>
                 </div>
                 <div className="mt-2">
-                  <Progress 
-                    value={passwordStrength} 
-                    className="h-1" 
-                    color={
-                      passwordStrength <= 25 ? "bg-red-500" : 
-                      passwordStrength <= 50 ? "bg-orange-500" : 
-                      passwordStrength <= 75 ? "bg-yellow-500" : "bg-green-500"
-                    }
-                  />
+                  <Suspense fallback={<div className="h-1 w-full bg-muted rounded-full animate-pulse"></div>}>
+                    <Progress 
+                      value={passwordStrength} 
+                      className="h-1" 
+                      color={
+                        passwordStrength <= 25 ? "bg-red-500" : 
+                        passwordStrength <= 50 ? "bg-orange-500" : 
+                        passwordStrength <= 75 ? "bg-yellow-500" : "bg-green-500"
+                      }
+                    />
+                  </Suspense>
                   <div className="mt-2 space-y-1 text-xs">
                     <div className="flex items-center gap-2">
                       {hasMinLength ? <Check className="h-3 w-3 text-green-500" /> : <X className="h-3 w-3 text-red-500" />}
