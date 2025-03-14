@@ -27,8 +27,6 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <GlobalLoader />
-        <NavigationEvents />
         <Suspense fallback={
           <div className="container mx-auto p-4 animate-pulse">
             <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
@@ -41,6 +39,8 @@ export default function RootLayout({
             <div className="h-48 bg-gray-200 rounded"></div>
           </div>
         }>
+                  <GlobalLoader />
+                  <NavigationEvents />
           {children}
         </Suspense>
       </body>

@@ -38,24 +38,28 @@ export default async function AdminLayout({
   return (
     <html lang="en">
       <body className={`${inter.variable} antialiased`}>
-        <GlobalLoader />
-        <NavigationEvents />
-        <SidebarProvider>
-          <AppSidebar />
-          <SidebarInset>
-            <Header />
-            <UserProvider>
-              <Suspense fallback={<div className="container mx-auto p-4 animate-pulse">
-                <div className="h-8 bg-gray-200 rounded w-1/3 mb-4"></div>
-                <div className="h-64 bg-gray-200 rounded mb-4"></div>
-                <div className="h-32 bg-gray-200 rounded"></div>
-              </div>}>
+        <Suspense
+          fallback={
+            <div className="container mx-auto p-4 animate-pulse">
+              <div className="h-8 bg-gray-200 rounded w-1/3 mb-4"></div>
+              <div className="h-64 bg-gray-200 rounded mb-4"></div>
+              <div className="h-32 bg-gray-200 rounded"></div>
+            </div>
+          }
+        >
+          <GlobalLoader />
+          <NavigationEvents />
+          <SidebarProvider>
+            <AppSidebar />
+            <SidebarInset>
+              <Header />
+              <UserProvider>
                 {children}
-              </Suspense>
-            </UserProvider>
-            <Toaster />
-          </SidebarInset>
-        </SidebarProvider>
+              </UserProvider>
+              <Toaster />
+            </SidebarInset>
+          </SidebarProvider>
+        </Suspense>
       </body>
     </html>
   );

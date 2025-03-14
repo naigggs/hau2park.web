@@ -27,11 +27,7 @@ export default function AuthLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        <GlobalLoader />
-        <NavigationEvents />
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <Suspense fallback={
           <div className="flex items-center justify-center min-h-screen">
             <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-lg shadow-lg animate-pulse">
@@ -45,9 +41,11 @@ export default function AuthLayout({
             </div>
           </div>
         }>
+          <GlobalLoader />
+          <NavigationEvents />
           {children}
+          <Toaster />
         </Suspense>
-        <Toaster />
       </body>
     </html>
   );

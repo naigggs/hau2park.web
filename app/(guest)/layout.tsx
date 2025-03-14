@@ -36,34 +36,34 @@ export default async function GuestLayout({
   return (
     <html lang="en">
       <body className={`${inter.variable} antialiased`}>
-        <GlobalLoader />
-        <NavigationEvents />
-        <UserProvider>
-          <ToastProvider>
-            <RealtimeListener />
-            <SidebarProvider>
-              <AppSidebar />
-              <SidebarInset>
-                <Header />
-                <Suspense fallback={
-                  <div className="container mx-auto p-4 animate-pulse">
-                    <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                      <div className="h-32 bg-gray-200 rounded"></div>
-                      <div className="h-32 bg-gray-200 rounded"></div>
-                      <div className="h-32 bg-gray-200 rounded"></div>
-                    </div>
-                    <div className="h-64 bg-gray-200 rounded mb-6"></div>
-                    <div className="h-48 bg-gray-200 rounded"></div>
-                  </div>
-                }>
+        <Suspense fallback={
+          <div className="container mx-auto p-4 animate-pulse">
+            <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+              <div className="h-32 bg-gray-200 rounded"></div>
+              <div className="h-32 bg-gray-200 rounded"></div>
+              <div className="h-32 bg-gray-200 rounded"></div>
+            </div>
+            <div className="h-64 bg-gray-200 rounded mb-6"></div>
+            <div className="h-48 bg-gray-200 rounded"></div>
+          </div>
+        }>
+          <GlobalLoader />
+          <NavigationEvents />
+          <UserProvider>
+            <ToastProvider>
+              <RealtimeListener />
+              <SidebarProvider>
+                <AppSidebar />
+                <SidebarInset>
+                  <Header />
                   {children}
-                </Suspense>
-                <Toaster />
-              </SidebarInset>
-            </SidebarProvider>
-          </ToastProvider>
-        </UserProvider>
+                  <Toaster />
+                </SidebarInset>
+              </SidebarProvider>
+            </ToastProvider>
+          </UserProvider>
+        </Suspense>
       </body>
     </html>
   );
