@@ -1,19 +1,22 @@
-import { type NextRequest } from 'next/server'
-import { updateSession } from '@/utils/supabase/middleware'
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 
-export async function middleware(request: NextRequest) {
-  return await updateSession(request)
+// This empty middleware function is required
+export default function middleware(request: NextRequest) {
+  return NextResponse.next();
 }
 
+// This configuration tells Next.js which routes to apply the middleware to
+// We're configuring it to match all routes except for some specific ones
 export const config = {
+  // Matcher is used to specify which paths this middleware should run on
   matcher: [
     /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * Feel free to modify this pattern to include more paths.
+     * Match all request paths except for:
+     * - API routes (/api/*)
+     * - Static files (_next/static, _next/image, favicon.ico, etc.)
+     * - Debug paths (/debug/*)
      */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    "/((?!api|_next/static|_next/image|favicon.ico|public|debug).*)"
   ],
-}
+};
