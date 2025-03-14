@@ -234,7 +234,7 @@ export default function ChatPage() {
   
     try {
       // CRITICAL: Command detection logic that exactly matches server-side implementation
-      const isCommandRequest = (text) => {
+      const isCommandRequest = (text: string) => {
         if (!text) return false;
         
         // Convert to lowercase and trim
