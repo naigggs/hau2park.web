@@ -1,5 +1,8 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { useToast } from "@/hooks/use-toast";
 import Header from "@/components/shared/landing/header";
 import { LoginForm } from "@/components/auth/login-form";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -7,6 +10,67 @@ import { CarFront } from "lucide-react";
 import Image from "next/image";
 
 export default function LoginPage() {
+  const { toast } = useToast();
+  const searchParams = useSearchParams();
+  const [hasShownToast, setHasShownToast] = useState(false);
+  
+  // Forced immediate toast if URL has the parameter
+  useEffect(() => {
+    // Check if we've already shown the toast to avoid duplicates
+    if (hasShownToast) return;
+    
+    // Check URL directly as a first approach
+    const urlParams = new URLSearchParams(window.location.search);
+    const registeredParam = urlParams.get('registered');
+    const messageParam = urlParams.get('message');
+    
+    // Check for registered flag in localStorage 
+    const storedSuccess = localStorage.getItem('registrationSuccess');
+    
+    // If any of these flags are present, show the toast
+    if ((registeredParam === 'true' || 
+         messageParam === 'Registration pending approval' ||
+         storedSuccess === 'true') && 
+        !hasShownToast) {
+      
+      // Show toast with delay to ensure components are mounted
+      setTimeout(() => {
+        toast({
+          title: "Registration Successful!",
+          description: "Your account has been created and is awaiting admin approval. You will receive an email when your account is approved.",
+          className: "bg-green-500 text-white",
+          duration: 10000, // 10 seconds
+        });
+        
+        // Clean up storage
+        localStorage.removeItem('registrationSuccess');
+        
+        // Mark that we've shown the toast
+        setHasShownToast(true);
+      }, 500);
+    }
+  }, [toast, hasShownToast]);
+  
+  // Also show toast based on Next.js router params (backup approach)
+  useEffect(() => {
+    if (hasShownToast) return;
+    
+    const justRegistered = searchParams.get('registered') === 'true';
+    const serverMessage = searchParams.get('message');
+    
+    if ((justRegistered || serverMessage === 'Registration pending approval') && !hasShownToast) {
+      setTimeout(() => {
+        toast({
+          title: "Registration Successful!",
+          description: "Your account has been created and is awaiting admin approval. You will receive an email when your account is approved.",
+          className: "bg-green-500 text-white",
+          duration: 10000,
+        });
+        setHasShownToast(true);
+      }, 500);
+    }
+  }, [searchParams, toast, hasShownToast]);
+
   return (
     <div className="min-h-screen w-full bg-white flex flex-col">
       {/* Header from landing page */}
