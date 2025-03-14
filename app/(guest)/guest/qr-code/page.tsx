@@ -20,6 +20,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { AnimatePresence, motion } from "framer-motion";
 import { RealtimeChannel } from "@supabase/supabase-js";
+import { useGuestQRCodeList } from '@/hooks/use-guest-qr';
 
 interface PendingRequest {
   id: string;
@@ -44,6 +45,9 @@ export default function QRCodesPage() {
   const [isOpenRequestsExpanded, setIsOpenRequestsExpanded] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [isRefreshing, setIsRefreshing] = useState(false);
+  
+  // Get QR code data to determine if we should hide the getting started section
+  const { guestQRList, loading: loadingQRs } = useGuestQRCodeList();
   
   // Reference to supabase subscription
   const supabaseSubscription = useRef<RealtimeChannel | null>(null);
@@ -70,10 +74,15 @@ export default function QRCodesPage() {
         // Set default accordion states based on presence of requests
         if ((data || []).length > 0) {
           setIsOpenRequestsExpanded(true); // Show open requests expanded by default
-          setIsGettingStartedExpanded(false); // Collapse getting started when there are requests
         } else {
           setIsOpenRequestsExpanded(false); // No requests, so collapse
-          setIsGettingStartedExpanded(true); // Expand getting started when no requests
+        }
+
+        // If there are QR codes, collapse getting started section
+        if (!loadingQRs && guestQRList.length > 0) {
+          setIsGettingStartedExpanded(false); // Collapse getting started when there are QR codes
+        } else {
+          setIsGettingStartedExpanded(true); // Otherwise, expand it
         }
       }
     } catch (error) {
@@ -137,7 +146,7 @@ export default function QRCodesPage() {
         supabase.removeChannel(supabaseSubscription.current);
       }
     };
-  }, [userId]);
+  }, [userId, guestQRList.length]);
   
   // Show registration success toast when user first lands on this page
   useEffect(() => {
@@ -160,6 +169,13 @@ export default function QRCodesPage() {
       }, 500);
     }
   }, [toast, searchParams]);
+
+  // When QR codes load, collapse getting started if there are QR codes
+  useEffect(() => {
+    if (!loadingQRs && guestQRList.length > 0) {
+      setIsGettingStartedExpanded(false);
+    }
+  }, [loadingQRs, guestQRList]);
 
   // Format date to readable format
   const formatDate = (dateString: string) => {
@@ -202,7 +218,12 @@ export default function QRCodesPage() {
         </Button>
       </div>
       
-      {/* Open Requests Accordion - Always shown */}
+      {/* QR Code List - First section */}
+      <div className="mb-6">
+        <QRCodeList />
+      </div>
+      
+      {/* Open Requests Accordion - Second section */}
       {isLoadingRequests && !isRefreshing ? (
         <Card className="mb-6">
           <CardHeader className="pb-2">
@@ -314,7 +335,7 @@ export default function QRCodesPage() {
         </Card>
       )}
       
-      {/* Getting Started Card - Always shown but as accordion */}
+      {/* Getting Started Card - Last section */}
       <Card className="mb-8 border-none shadow-md overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-transparent to-orange-500/10 rounded-lg pointer-events-none" />
         <CardHeader 
@@ -392,7 +413,6 @@ export default function QRCodesPage() {
         </AnimatePresence>
       </Card>
       
-      <QRCodeList />
       <GenerateQRCodeModal
         isOpen={isGenerateModalOpen}
         onClose={() => setIsGenerateModalOpen(false)}

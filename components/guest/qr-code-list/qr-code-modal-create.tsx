@@ -1,14 +1,22 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
   DialogDescription,
 } from "@/components/ui/dialog";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerClose,
+} from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -37,6 +45,24 @@ export function GenerateQRCodeModal({
   onClose,
   onSuccess,
 }: GenerateQRCodeModalProps) {
+  // State to determine if we're showing desktop or mobile UI
+  const [isDesktopUI, setIsDesktopUI] = useState<boolean | null>(null);
+  
+  // Set UI mode on component mount or when isOpen changes
+  useEffect(() => {
+    // Only check if isOpen is true and we haven't set the UI mode yet
+    if (isOpen && isDesktopUI === null) {
+      // Check window width directly instead of using media query hook
+      const isDesktop = window.matchMedia("(min-width: 768px)").matches;
+      setIsDesktopUI(isDesktop);
+    }
+    
+    // Reset UI mode when modal closes
+    if (!isOpen) {
+      setIsDesktopUI(null);
+    }
+  }, [isOpen, isDesktopUI]);
+  
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
@@ -144,163 +170,218 @@ export function GenerateQRCodeModal({
       setLoading(false);
     }
   };
+  
+  // Don't render anything until we've determined which UI to show
+  if (isDesktopUI === null) {
+    return null;
+  }
+  
+  // Form component is defined once and reused
+  const FormUI = (
+    <form onSubmit={handleSubmit} className="mt-4">
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="title" className="text-sm font-medium flex items-center">
+            Request Title <span className="text-red-500 ml-1">*</span>
+          </Label>
+          <Input 
+            id="title" 
+            name="title" 
+            placeholder="Enter a title for your parking request"
+            value={formData.title}
+            onChange={handleChange}
+            className={cn(
+              "bg-zinc-50 border-zinc-200 focus-visible:ring-zinc-400",
+              formErrors.title && "border-red-500 focus-visible:ring-red-500"
+            )}
+          />
+          {formErrors.title && <p className="text-xs text-red-500 mt-1">{formErrors.title}</p>}
+        </div>
+        
+        <div className={`grid ${isDesktopUI ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1"} gap-4`}>
+          <div className="space-y-2">
+            <Label htmlFor="appointmentDate" className="text-sm font-medium flex items-center">
+              <Calendar className="h-3.5 w-3.5 mr-1.5 text-zinc-500" />
+              Appointment Date <span className="text-red-500 ml-1">*</span>
+            </Label>
+            <Input 
+              type="date" 
+              name="appointmentDate" 
+              id="appointmentDate"
+              min={today}
+              value={formData.appointmentDate}
+              onChange={handleChange}
+              className={cn(
+                "bg-zinc-50 border-zinc-200 focus-visible:ring-zinc-400",
+                formErrors.appointmentDate && "border-red-500 focus-visible:ring-red-500"
+              )}
+            />
+            {formErrors.appointmentDate && <p className="text-xs text-red-500 mt-1">{formErrors.appointmentDate}</p>}
+          </div>
+        
+          <div className="space-y-2">
+            <Label htmlFor="parkingTimeIn" className="text-sm font-medium flex items-center">
+              <Clock className="h-3.5 w-3.5 mr-1.5 text-zinc-500" />
+              Start Time <span className="text-red-500 ml-1">*</span>
+            </Label>
+            <Input
+              id="parkingTimeIn"
+              name="parkingTimeIn"
+              type="time"
+              value={formData.parkingTimeIn}
+              onChange={handleChange}
+              className={cn(
+                "bg-zinc-50 border-zinc-200 focus-visible:ring-zinc-400",
+                formErrors.parkingTimeIn && "border-red-500 focus-visible:ring-red-500"
+              )}
+            />
+            {formErrors.parkingTimeIn && <p className="text-xs text-red-500 mt-1">{formErrors.parkingTimeIn}</p>}
+          </div>
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="parkingTimeOut" className="text-sm font-medium flex items-center">
+            <Clock className="h-3.5 w-3.5 mr-1.5 text-zinc-500" />
+            End Time <span className="text-red-500 ml-1">*</span>
+          </Label>
+          <Input
+            id="parkingTimeOut"
+            name="parkingTimeOut"
+            type="time"
+            value={formData.parkingTimeOut}
+            onChange={handleChange}
+            className={cn(
+              "bg-zinc-50 border-zinc-200 focus-visible:ring-zinc-400",
+              formErrors.parkingTimeOut && "border-red-500 focus-visible:ring-red-500"
+            )}
+          />
+          {formErrors.parkingTimeOut && <p className="text-xs text-red-500 mt-1">{formErrors.parkingTimeOut}</p>}
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="purpose" className="text-sm font-medium flex items-center">
+            <ClipboardList className="h-3.5 w-3.5 mr-1.5 text-zinc-500" />
+            Purpose of Visit <span className="text-red-500 ml-1">*</span>
+          </Label>
+          <Textarea 
+            id="purpose" 
+            name="purpose" 
+            placeholder="Briefly describe the purpose of your visit"
+            value={formData.purpose}
+            onChange={handleChange}
+            className={cn(
+              "min-h-[80px] resize-none bg-zinc-50 border-zinc-200 focus-visible:ring-zinc-400",
+              formErrors.purpose && "border-red-500 focus-visible:ring-red-500"
+            )}
+          />
+          {formErrors.purpose && <p className="text-xs text-red-500 mt-1">{formErrors.purpose}</p>}
+        </div>
+      </div>
+      
+      <div className="bg-zinc-50 px-6 py-4 mt-6 rounded-b-lg border-t border-zinc-100 flex flex-col sm:flex-row gap-3 sm:justify-between items-center">
+        <div className="flex items-start text-xs text-zinc-500">
+          <Info className="h-3.5 w-3.5 mr-1.5 mt-0.5 flex-shrink-0" />
+          <span>Requests are typically processed within 1-2 hours.</span>
+        </div>
+        
+        <div className="flex gap-2 w-full sm:w-auto">
+          {isDesktopUI && (
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={onClose} 
+              disabled={loading}
+              className="flex-1 sm:flex-none border-zinc-200 text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900"
+            >
+              Cancel
+            </Button>
+          )}
+          <Button 
+            type="submit" 
+            disabled={loading} 
+            className="flex-1 sm:flex-none min-w-[100px] bg-zinc-900 hover:bg-zinc-800 text-white"
+          >
+            {loading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Submitting...
+              </>
+            ) : (
+              "Submit Request"
+            )}
+          </Button>
+        </div>
+      </div>
+    </form>
+  );
 
+  // Desktop UI
+  if (isDesktopUI) {
+    return (
+      <Dialog open={isOpen} onOpenChange={(open) => {
+        if (!open) {
+          resetForm();
+          onClose();
+        }
+      }} modal={true}>
+        <DialogContent className="sm:max-w-[500px] max-w-[95vw] overflow-hidden p-0">
+          <div className="p-6 pb-0">
+            <DialogHeader className="space-y-2">
+              <DialogTitle className="text-xl flex items-center">
+                <span className="h-7 w-7 bg-zinc-900 rounded-full flex items-center justify-center mr-2">
+                  <CalendarCheck className="h-4 w-4 text-white" />
+                </span>
+                Parking Request
+              </DialogTitle>
+              <DialogDescription className="text-zinc-500">
+                Fill in the details below to submit your parking request.
+              </DialogDescription>
+            </DialogHeader>
+            
+            {FormUI}
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+  
+  // Mobile UI
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => {
+    <Drawer open={isOpen} onOpenChange={(open) => {
       if (!open) {
         resetForm();
         onClose();
       }
-    }}>
-      <DialogContent className="sm:max-w-[500px] max-w-[95vw] overflow-hidden p-0">
-        <div className="p-6 pb-0">
-          <DialogHeader className="space-y-2">
-            <DialogTitle className="text-xl flex items-center">
-              <span className="h-7 w-7 bg-zinc-900 rounded-full flex items-center justify-center mr-2">
-                <CalendarCheck className="h-4 w-4 text-white" />
-              </span>
-              Parking Request
-            </DialogTitle>
-            <DialogDescription className="text-zinc-500">
-              Fill in the details below to submit your parking request.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <form onSubmit={handleSubmit} className="mt-4">
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="title" className="text-sm font-medium flex items-center">
-                  Request Title <span className="text-red-500 ml-1">*</span>
-                </Label>
-                <Input 
-                  id="title" 
-                  name="title" 
-                  placeholder="Enter a title for your parking request"
-                  value={formData.title}
-                  onChange={handleChange}
-                  className={cn(
-                    "bg-zinc-50 border-zinc-200 focus-visible:ring-zinc-400",
-                    formErrors.title && "border-red-500 focus-visible:ring-red-500"
-                  )}
-                />
-                {formErrors.title && <p className="text-xs text-red-500 mt-1">{formErrors.title}</p>}
-              </div>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="appointmentDate" className="text-sm font-medium flex items-center">
-                    <Calendar className="h-3.5 w-3.5 mr-1.5 text-zinc-500" />
-                    Appointment Date <span className="text-red-500 ml-1">*</span>
-                  </Label>
-                  <Input 
-                    type="date" 
-                    name="appointmentDate" 
-                    id="appointmentDate"
-                    min={today}
-                    value={formData.appointmentDate}
-                    onChange={handleChange}
-                    className={cn(
-                      "bg-zinc-50 border-zinc-200 focus-visible:ring-zinc-400",
-                      formErrors.appointmentDate && "border-red-500 focus-visible:ring-red-500"
-                    )}
-                  />
-                  {formErrors.appointmentDate && <p className="text-xs text-red-500 mt-1">{formErrors.appointmentDate}</p>}
-                </div>
-              
-                <div className="space-y-2">
-                  <Label htmlFor="parkingTimeIn" className="text-sm font-medium flex items-center">
-                    <Clock className="h-3.5 w-3.5 mr-1.5 text-zinc-500" />
-                    Start Time <span className="text-red-500 ml-1">*</span>
-                  </Label>
-                  <Input
-                    id="parkingTimeIn"
-                    name="parkingTimeIn"
-                    type="time"
-                    value={formData.parkingTimeIn}
-                    onChange={handleChange}
-                    className={cn(
-                      "bg-zinc-50 border-zinc-200 focus-visible:ring-zinc-400",
-                      formErrors.parkingTimeIn && "border-red-500 focus-visible:ring-red-500"
-                    )}
-                  />
-                  {formErrors.parkingTimeIn && <p className="text-xs text-red-500 mt-1">{formErrors.parkingTimeIn}</p>}
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="parkingTimeOut" className="text-sm font-medium flex items-center">
-                  <Clock className="h-3.5 w-3.5 mr-1.5 text-zinc-500" />
-                  End Time <span className="text-red-500 ml-1">*</span>
-                </Label>
-                <Input
-                  id="parkingTimeOut"
-                  name="parkingTimeOut"
-                  type="time"
-                  value={formData.parkingTimeOut}
-                  onChange={handleChange}
-                  className={cn(
-                    "bg-zinc-50 border-zinc-200 focus-visible:ring-zinc-400",
-                    formErrors.parkingTimeOut && "border-red-500 focus-visible:ring-red-500"
-                  )}
-                />
-                {formErrors.parkingTimeOut && <p className="text-xs text-red-500 mt-1">{formErrors.parkingTimeOut}</p>}
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="purpose" className="text-sm font-medium flex items-center">
-                  <ClipboardList className="h-3.5 w-3.5 mr-1.5 text-zinc-500" />
-                  Purpose of Visit <span className="text-red-500 ml-1">*</span>
-                </Label>
-                <Textarea 
-                  id="purpose" 
-                  name="purpose" 
-                  placeholder="Briefly describe the purpose of your visit"
-                  value={formData.purpose}
-                  onChange={handleChange}
-                  className={cn(
-                    "min-h-[80px] resize-none bg-zinc-50 border-zinc-200 focus-visible:ring-zinc-400",
-                    formErrors.purpose && "border-red-500 focus-visible:ring-red-500"
-                  )}
-                />
-                {formErrors.purpose && <p className="text-xs text-red-500 mt-1">{formErrors.purpose}</p>}
-              </div>
-            </div>
-            
-            <div className="bg-zinc-50 px-6 py-4 mt-6 rounded-b-lg border-t border-zinc-100 flex flex-col sm:flex-row gap-3 sm:justify-between items-center">
-              <div className="flex items-start text-xs text-zinc-500">
-                <Info className="h-3.5 w-3.5 mr-1.5 mt-0.5 flex-shrink-0" />
-                <span>Requests are typically processed within 1-2 hours.</span>
-              </div>
-              
-              <div className="flex gap-2 w-full sm:w-auto">
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={onClose} 
-                  disabled={loading}
-                  className="flex-1 sm:flex-none border-zinc-200 text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900"
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  type="submit" 
-                  disabled={loading} 
-                  className="flex-1 sm:flex-none min-w-[100px] bg-zinc-900 hover:bg-zinc-800 text-white"
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Submitting...
-                    </>
-                  ) : (
-                    "Submit Request"
-                  )}
-                </Button>
-              </div>
-            </div>
-          </form>
+    }} modal={true}>
+      <DrawerContent>
+        <DrawerHeader className="text-left">
+          <div className="flex items-center">
+            <span className="h-7 w-7 bg-zinc-900 rounded-full flex items-center justify-center mr-2">
+              <CalendarCheck className="h-4 w-4 text-white" />
+            </span>
+            <DrawerTitle className="text-xl">Parking Request</DrawerTitle>
+          </div>
+          <DrawerDescription className="text-zinc-500">
+            Fill in the details below to submit your parking request.
+          </DrawerDescription>
+        </DrawerHeader>
+        
+        <div className="px-4">
+          {FormUI}
         </div>
-      </DialogContent>
-    </Dialog>
+        
+        <DrawerFooter className="pt-2">
+          <DrawerClose asChild>
+            <Button 
+              variant="outline" 
+              disabled={loading}
+              className="border-zinc-200 text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900"
+            >
+              Cancel
+            </Button>
+          </DrawerClose>
+        </DrawerFooter>
+      </DrawerContent>
+    </Drawer>
   );
 }
