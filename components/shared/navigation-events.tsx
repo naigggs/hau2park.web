@@ -31,7 +31,15 @@ export function NavigationEvents() {
           link.target !== '_blank' && 
           !e.ctrlKey && 
           !e.metaKey) {
-        handleRouteChangeStart();
+        
+        // Check if the link points to the current page
+        const currentUrl = window.location.href.split('#')[0].split('?')[0];
+        const clickedUrl = link.href.split('#')[0].split('?')[0];
+        
+        // Only trigger loading if navigating to a different page
+        if (currentUrl !== clickedUrl) {
+          handleRouteChangeStart();
+        }
       }
     };
     
