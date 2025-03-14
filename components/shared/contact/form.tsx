@@ -119,7 +119,7 @@ export default function ContactForm() {
     try {
       // Get the email where you want to receive contact form submissions
       // You could store this in an environment variable or config
-      const recipientEmail = process.env.NEXT_PUBLIC_CONTACT_EMAIL || 'your-email@example.com';
+      const recipientEmail = process.env.EMAIL_USER || 'your-email@example.com';
       
       const emailData = {
         to: recipientEmail,

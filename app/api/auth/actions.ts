@@ -57,6 +57,7 @@ export async function GuestSignUp(formData: FormData) {
 
   if (error) {
     console.log("Guest Sign Up", error);
+    throw new Error(error.message);
   }
 
   const { error: roleError } = await supabase.from("user_roles").insert([
@@ -84,7 +85,8 @@ export async function GuestSignUp(formData: FormData) {
   }
 
   revalidatePath("/guest/qr-code", "layout");
-  redirect("/guest/qr-code");
+  // Redirect with a query param to indicate new registration
+  redirect("/guest/qr-code?newRegistration=true");
 }
 
 export async function registerUser(formData: FormData) {
@@ -113,33 +115,41 @@ export async function registerUser(formData: FormData) {
     });
 
   if (signupError) {
-   console.log("Error signing up", signupError);
+    console.log("Error signing up", signupError);
+    throw new Error(signupError.message);
   }
 
   // Handle document upload if provided
   if (document1) {
-    const fileExt = document1.name.split(".").pop();
-    const fileName = `${email}-id.${fileExt}`;
-    
-    const { error: uploadError } = await supabase.storage
-      .from("user-documents")
-      .upload(fileName, document1);
+    try {
+      const fileExt = document1.name.split(".").pop();
+      const fileName = `${email}-id.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from("user-documents")
+        .upload(fileName, document1);
 
-    if (uploadError) {
-      console.log("Error uploading document", uploadError);
+      if (uploadError) {
+        console.log("Error uploading document", uploadError);
+      } else {
+        // Only update if upload succeeded
+        const { data: { publicUrl } } = supabase.storage
+          .from("user-documents") // Use the same bucket for consistency
+          .getPublicUrl(fileName);
+
+        await supabase
+          .from("account_sign_up")
+          .update({ id_link: publicUrl })
+          .eq("email", email);
+      }
+    } catch (docError) {
+      console.error("Document upload error:", docError);
+      // Continue with registration even if document upload fails
     }
-
-    // Update the account_sign_up record with the document URL
-    const { data: { publicUrl } } = supabase.storage
-      .from("hau2park")
-      .getPublicUrl(fileName);
-
-    await supabase
-      .from("account_sign_up")
-      .update({ id_link: publicUrl })
-      .eq("email", email);
   }
 
   revalidatePath("/auth/login");
-  redirect("/auth/login?message=Registration pending approval");
+  
+  // Return success instead of redirecting
+  return { success: true, message: "Registration pending approval" };
 }

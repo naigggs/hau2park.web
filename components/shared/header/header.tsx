@@ -19,10 +19,14 @@ export default function Header() {
     "/admin/parking": "Parking Spaces",
     "/admin/accounts": "Accounts",
     "/admin/guest-list": "Guest List",
+    "staff/dashboard": "Staff Dashboard",
+    "staff/parking": "Parking Spaces",
     "/staff/qr-parking": "QR Parking",
     "/guest/dashboard": "Guest Dashboard",
     "/guest/chat-bot": "HAU2Park Chatbot",
     "/guest/qr-code": "QR Code List",
+    "/user/dashboard": "User Dashboard",
+    "/user/chat-bot": "HAU2Park Chatbot",
   };
 
   const pageTitle = pageTitles[pathname] || "Unknown Page";
