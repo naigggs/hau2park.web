@@ -30,10 +30,33 @@ const ENTRANCES = {
 
 const PARKING_DESTINATION = { lat: 15.132573845065755, lng: 120.58929898215513 };
 
-const suggestions = [
+// Expanded list of suggestion options
+const ALL_SUGGESTIONS = [
+  // Availability commands
   "Is there any available parking?",
+  "Show me available parking spaces",
+  "Check parking availability",
+  "Are there any free spaces at SJH?",
+  // Parking locations
+  "What parking locations are available?",
+  "Show parking spaces in APS",
+  "Where can I park?",
+  // Reservation commands
+  "How do I reserve parking?",
+  "Reserve a parking space",
+  "I want to park in P1",
+  // Parking status
   "Where is my parked car?",
-  "What's the status of parking space P1?",
+  "What's my parking status?",
+  "Show me my current parking",
+  // Navigation
+  "How do I get to P1?",
+  "Directions to my parking space",
+  "Show route from Main Entrance to P2",
+  // Information
+  "What are the parking rules?",
+  "Tell me about HAU2Park",
+  "Who created this system?",
 ];
 
 export default function ChatPage() {
@@ -43,25 +66,128 @@ export default function ChatPage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [conversationHistory, setConversationHistory] = useState<string[]>([]);
   const [awaitingParkingConfirmation, setAwaitingParkingConfirmation] = useState<string | null>(null);
+  
+  // Randomly select 3 suggestions on component mount
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  
+  useEffect(() => {
+    // Shuffle and take 3 random suggestions
+    const getRandomSuggestions = () => {
+      const shuffled = [...ALL_SUGGESTIONS].sort(() => 0.5 - Math.random());
+      return shuffled.slice(0, 3);
+    };
+    
+    setSuggestions(getRandomSuggestions());
+  }, []);
 
-  // Move createMessage before it's used in useEffect
+  // Helper function to extract parking space name with typo tolerance
+  const extractParkingSpace = (text: string): string | null => {
+    // Handle various formats: p1, P1, p 1, P 1, p-1, P-1, etc.
+    const parkingRegex = /p[\s-]*(\d+)/i;
+    const match = text.match(parkingRegex);
+    if (match && match[1]) {
+      return `P${match[1]}`;
+    }
+    return null;
+  };
+
+  // Helper function to detect entrance names with typo tolerance
+  const detectEntrance = (text: string): 'Main' | 'Side' | null => {
+    const lowercaseText = text.toLowerCase();
+    
+    // Main entrance variations
+    if (
+      lowercaseText.includes('main') || 
+      lowercaseText.includes('mian') || 
+      lowercaseText.includes('man') ||
+      lowercaseText.includes('mein') ||
+      lowercaseText.includes('front')
+    ) {
+      return 'Main';
+    }
+    
+    // Side entrance variations
+    if (
+      lowercaseText.includes('side') || 
+      lowercaseText.includes('sied') || 
+      lowercaseText.includes('sid') || 
+      lowercaseText.includes('back')
+    ) {
+      return 'Side';
+    }
+    
+    return null;
+  };
+
+  // Helper function to detect route requests
+  const isRouteRequest = (text: string): boolean => {
+    const lowercaseText = text.toLowerCase();
+    return (
+      (lowercaseText.includes('route') || 
+       lowercaseText.includes('direction') || 
+       lowercaseText.includes('how to get') ||
+       lowercaseText.includes('path') ||
+       lowercaseText.includes('way to') ||
+       lowercaseText.includes('map')) &&
+      (lowercaseText.includes('from') || lowercaseText.includes('to'))
+    );
+  };
+
+  // Create message function with improved map detection
   const createMessage = useCallback((response: string, isAi = false) => {
     const context = ChatContextManager.getContext();
-    const showMap = context.selectedParking && 
-                   context.entrance && 
-                   response.includes(`Here's the route to ${context.selectedParking} from ${context.entrance} Entrance`);
+    
+    // Detect if this is a route-related response
+    const isRouteMessage = isAi && (
+      // Normal flow with context values set
+      (context.selectedParking && 
+       context.entrance && 
+       response.includes(`Here's the route to ${context.selectedParking} from ${context.entrance} Entrance`)) ||
+      // Direct route request detection for any route/directions response
+      (response.toLowerCase().includes('route') && 
+       (response.toLowerCase().includes('from main entrance') || 
+        response.toLowerCase().includes('from side entrance')))
+    );
+    
+    // Add 5-minute warning if this is a route message and it doesn't already have it
+    if (isRouteMessage && !response.includes("5 minutes")) {
+      response = `${response}. Remember, you have 5 minutes to arrive and park in your reserved space, or your reservation will expire. After parking, you'll need to verify your parking when prompted.`;
+    }
+
+    // Determine if we should show a map
+    const showMap = isAi && isRouteMessage;
+
+    // Get entrance for map if not in context
+    let mapEntrance = context.entrance;
+    if (!mapEntrance && showMap) {
+      // Try to extract entrance from response text
+      if (response.toLowerCase().includes('from main entrance')) {
+        mapEntrance = 'Main';
+      } else if (response.toLowerCase().includes('from side entrance')) {
+        mapEntrance = 'Side';
+      }
+    }
+
+    // Extract parking space from response if not in context (for direct requests)
+    let parkingSpace = context.selectedParking;
+    if (!parkingSpace && showMap) {
+      const parkingMatch = extractParkingSpace(response);
+      if (parkingMatch) {
+        parkingSpace = parkingMatch;
+      }
+    }
 
     const message: Message = {
       id: `${Date.now()}-${isAi ? 'ai' : 'user'}`,
       content: response,
       role: isAi ? "assistant" : "user",
-      experimental_attachments: showMap && isAi ? [
+      experimental_attachments: showMap ? [
         {
           name: "map",
           contentType: "application/json",
           url: "data:application/json,{}", // Minimal valid data URL
           mapData: {
-            origin: ENTRANCES[context.entrance!],
+            origin: ENTRANCES[mapEntrance || 'Main'],
             destination: PARKING_DESTINATION,
           }
         }
@@ -74,7 +200,7 @@ export default function ChatPage() {
   useEffect(() => {
     const handleParkingTaken = (event: ParkingTakenEvent) => {
       const message = createMessage(
-        `Your reserved parking at ${event.detail.parkingSpace} (${event.detail.location}) was taken by an unauthorized vehicle. Admin has been notified. Would you like me to help you find another available parking space?`,
+        `Your reserved parking at ${event.detail.parkingSpace} (${event.detail.location}) was taken by an unauthorized vehicle. Admin has been notified. You could find another parking space by asking "Is there any available parking?"`,
         true
       );
       setMessages((prev) => [...prev, message]);
@@ -88,7 +214,7 @@ export default function ChatPage() {
 
     const handleParkingVerified = (event: ParkingVerifiedEvent) => {
       const message = createMessage(
-        `Thank you for verifying your parking at ${event.detail.parkingSpace}. Your car is now properly registered as parked. Is there anything else you need help with?`,
+        `Thank you for verifying your parking at ${event.detail.parkingSpace}. Your car is now properly registered as parked. Thank you for using HAU2Park!`,
         true
       );
       setMessages((prev) => [...prev, message]);
@@ -105,17 +231,98 @@ export default function ChatPage() {
 
   const handleMessage = useCallback(async (prompt: string) => {
     setIsGenerating(true);
-
+  
     try {
+      // CRITICAL: Command detection logic that exactly matches server-side implementation
+      const isCommandRequest = (text) => {
+        if (!text) return false;
+        
+        // Convert to lowercase and trim
+        const lowerText = text.toLowerCase().trim();
+        
+        // Direct command-related terms
+        if (
+          lowerText === "commands" ||
+          lowerText === "command" ||
+          lowerText === "command list" ||
+          lowerText === "available commands" ||
+          lowerText === "show commands" ||
+          lowerText === "list commands" ||
+          lowerText === "help" ||
+          lowerText === "menu" ||
+          lowerText === "what commands are available" ||
+          lowerText === "what are the commands" ||
+          lowerText === "show me the commands" ||
+          lowerText === "available command"
+        ) {
+          return true;
+        }
+        
+        // Contains command-related terms
+        if (
+          lowerText.includes("command") ||
+          lowerText.includes("commands") ||
+          lowerText.includes("help me") ||
+          (lowerText.includes("what") && lowerText.includes("do")) ||
+          (lowerText.includes("what") && lowerText.includes("commands")) ||
+          (lowerText.includes("show") && lowerText.includes("commands")) ||
+          (lowerText.includes("list") && lowerText.includes("commands")) ||
+          (lowerText.includes("available") && lowerText.includes("commands")) ||
+          lowerText.includes("what can you do") ||
+          lowerText.includes("what can i do") ||
+          lowerText.includes("what can i ask") ||
+          lowerText.includes("how to use") ||
+          lowerText.includes("instructions") ||
+          lowerText.includes("instruction") ||
+          lowerText.includes("capabilities") ||
+          lowerText.includes("capability") ||
+          lowerText.includes("functions") ||
+          lowerText.includes("function")
+        ) {
+          return true;
+        }
+        
+        return false;
+      };
+  
+      // CRITICAL: Reset context for command requests
+      if (isCommandRequest(prompt)) {
+        // Clear all navigation context when user asks for commands
+        ChatContextManager.updateContext({
+          selectedParking: "",
+          entrance: undefined,
+          lastParkingQuery: ""
+        });
+        console.log("Command request detected, context reset");
+      }
+      
       const context = ChatContextManager.getContext();
       setConversationHistory(prev => [...prev, prompt]);
-
-      // Check for parking space selection first
-      if (prompt.toLowerCase().includes("park in") || prompt.toLowerCase().includes("i want to park in")) {
-        const parkingSpaceMatch = prompt.toLowerCase().match(/park in (p\d+)/i);
-        if (parkingSpaceMatch) {
-          const parkingSpace = parkingSpaceMatch[1].toUpperCase();
+      
+      // Check for direct route requests first      
+      if (isRouteRequest(prompt)) {
+        const parkingSpace = extractParkingSpace(prompt);
+        const entrance = detectEntrance(prompt);
+        
+        if (parkingSpace && entrance) {
+          // Update context for direct route requests
+          ChatContextManager.updateContext({
+            selectedParking: parkingSpace,
+            entrance: entrance
+          });
           
+          // Return a formatted route response
+          return `Here's the route to ${parkingSpace} from ${entrance} Entrance. Remember, you have 5 minutes to arrive and park in your reserved space, or your reservation will expire. After parking, you'll need to verify your parking when prompted.`;
+        }
+      }
+
+      // Check for parking space selection with typo tolerance
+      if (prompt.toLowerCase().includes("park") || 
+          prompt.toLowerCase().includes("want") || 
+          prompt.toLowerCase().includes("reserve")) {
+        
+        const parkingSpace = extractParkingSpace(prompt);
+        if (parkingSpace) {
           if (!userId) {
             return 'You must be logged in to reserve a parking space.';
           }
@@ -148,7 +355,14 @@ export default function ChatPage() {
 
       if (awaitingParkingConfirmation) {
         const response = prompt.toLowerCase();
-        if (response.includes('yes') || response.includes('yeah') || response.includes('sure')) {
+        // Expanded acceptance of confirmation with typo tolerance
+        if (response.includes('yes') || 
+            response.includes('yeah') || 
+            response.includes('sure') || 
+            response.includes('yep') || 
+            response.includes('correct') ||
+            response.includes('ok') ||
+            response.includes('okay')) {
           const supabase = createClient();
 
           // First check if user is a guest by querying user_roles
@@ -165,7 +379,7 @@ export default function ChatPage() {
           }
 
           // If user is a guest, get their latest parking request
-          if (roleData.role === "Guest") {
+          if (roleData?.role === "Guest") {
             const { data: parkingRequest, error: requestError } = await supabase
               .from("guest_parking_request")
               .select("*")
@@ -274,16 +488,21 @@ export default function ChatPage() {
           });
           
           return "What entrance are you coming from? (Main Entrance or Side Entrance)?";
-        } else if (response.includes('no')) {
+        } else if (
+          response.includes('no') || 
+          response.includes('nope') || 
+          response.includes('cancel') || 
+          response.includes('dont') || 
+          response.includes("don't")
+        ) {
           setAwaitingParkingConfirmation(null);
           return "What would you like to do instead?";
         }
       }
 
-      // Check for entrance selection
-      const entranceMatch = prompt.toLowerCase().match(/(main|side) entrance/i);
-      if (entranceMatch && context.selectedParking) {
-        const entrance = entranceMatch[1].charAt(0).toUpperCase() + entranceMatch[1].slice(1) as 'Main' | 'Side';
+      // Check for entrance selection with typo tolerance
+      const entrance = detectEntrance(prompt);
+      if (entrance && context.selectedParking) {
         ChatContextManager.updateContext({ entrance });
         return `Here's the route to ${context.selectedParking} from ${entrance} Entrance`;
       }
@@ -301,11 +520,25 @@ export default function ChatPage() {
       if (!response.ok) throw new Error("Failed to fetch response");
 
       const { response: aiResponse } = await response.json();
+      
+      // Handle direct route requests from AI responses
+      if (isRouteRequest(prompt) && aiResponse.toLowerCase().includes('route')) {
+        const parkingSpace = extractParkingSpace(aiResponse) || extractParkingSpace(prompt);
+        const entrance = detectEntrance(aiResponse) || detectEntrance(prompt);
+        
+        if (parkingSpace && entrance) {
+          ChatContextManager.updateContext({
+            selectedParking: parkingSpace,
+            entrance: entrance
+          });
+        }
+      }
+      
       return aiResponse;
     } finally {
       setIsGenerating(false);
     }
-  }, [conversationHistory, awaitingParkingConfirmation, userId, firstName, lastName]);
+  }, [conversationHistory, awaitingParkingConfirmation, userId, firstName, lastName, extractParkingSpace, detectEntrance, isRouteRequest]);
 
   const handleSubmit = useCallback(
     async (e?: { preventDefault?: () => void }) => {

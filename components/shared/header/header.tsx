@@ -25,6 +25,8 @@ export default function Header() {
     "/guest/dashboard": "Guest Dashboard",
     "/guest/chat-bot": "HAU2Park Chatbot",
     "/guest/qr-code": "QR Code List",
+    "/user/dashboard": "User Dashboard",
+    "/user/chat-bot": "HAU2Park Chatbot",
   };
 
   const pageTitle = pageTitles[pathname] || "Unknown Page";
