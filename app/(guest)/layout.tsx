@@ -8,6 +8,8 @@ import { AppSidebar } from "@/components/guest/sidebar/app-sidebar";
 import Header from "@/components/shared/header/header";
 import { UserProvider } from "../context/user-context";
 import RealtimeListener from "@/components/shared/realtime-listener/realtime-listener";
+import { GlobalLoader } from "@/components/ui/global-loader";
+import { NavigationEvents } from '@/components/shared/navigation-events';
 
 const inter = Inter({
   variable: "--font-inter",
@@ -33,6 +35,8 @@ export default async function GuestLayout({
   return (
     <html lang="en">
       <body className={`${inter.variable} antialiased`}>
+        <GlobalLoader />
+        <NavigationEvents />
         <UserProvider>
           <ToastProvider>
             <RealtimeListener />

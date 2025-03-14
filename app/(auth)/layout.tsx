@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "@/app/shared/css/globals.css";
 import { Toaster } from "@/components/ui/toaster";
+import { GlobalLoader } from "@/components/ui/global-loader";
+import { NavigationEvents } from '@/components/shared/navigation-events';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -27,6 +29,8 @@ export default function AuthLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <GlobalLoader />
+        <NavigationEvents />
         {children}
         <Toaster />
       </body>

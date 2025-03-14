@@ -8,6 +8,8 @@ import { redirect } from "next/navigation";
 import { AppSidebar } from "@/components/admin/sidebar/app-sidebar";
 import Header from "@/components/shared/header/header";
 import { UserProvider } from "../context/user-context";
+import { GlobalLoader } from "@/components/ui/global-loader";
+import { NavigationEvents } from '@/components/shared/navigation-events';
 
 const inter = Inter({
   variable: "--font-inter",
@@ -35,6 +37,8 @@ export default async function AdminLayout({
   return (
     <html lang="en">
       <body className={`${inter.variable} antialiased`}>
+        <GlobalLoader />
+        <NavigationEvents />
         <SidebarProvider>
           <AppSidebar />
           <SidebarInset>
