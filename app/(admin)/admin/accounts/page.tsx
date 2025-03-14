@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from "react"
+import { useState, Suspense } from "react"
 import { Shield, Users, NotebookPen, UserCheck, Check, X } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -42,7 +42,8 @@ interface ApprovalAction {
   type: "approve" | "reject";
 }
 
-export default function AccountsList() {
+// Wrap the main component content in Suspense
+function AccountsListContent() {
   const { users, loading, error } = useUsers();
   const { approvals, loading: approvalsLoading, error: approvalsError } = usePendingApprovals();
   const [searchTerm, setSearchTerm] = useState("");
@@ -473,5 +474,25 @@ export default function AccountsList() {
         />
       )}
     </motion.div>
+  )
+}
+
+// Main component with Suspense wrapper
+export default function AccountsList() {
+  return (
+    <Suspense fallback={
+      <div className="flex-1 space-y-4 p-8">
+        <div className="flex items-center justify-between">
+          <div className="h-8 w-48 bg-gray-200 rounded"></div>
+          <div className="h-10 w-32 bg-gray-200 rounded"></div>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="h-96 bg-gray-200 rounded animate-pulse"></div>
+          <div className="h-96 bg-gray-200 rounded animate-pulse"></div>
+        </div>
+      </div>
+    }>
+      <AccountsListContent />
+    </Suspense>
   )
 }
