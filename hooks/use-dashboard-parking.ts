@@ -36,6 +36,20 @@ export const useDashboardParking = () => {
 
       if (parkingError) throw parkingError;
 
+      const { data: users, error: usersError } = await supabase
+      .from("user_info")
+      .select("user_id, first_name, last_name, vehicle_plate_number, email, phone");
+    
+
+      if (usersError) throw usersError;
+
+      // Create a map of user names to user data for easy lookup
+      const userMap = new Map();
+      users.forEach(user => {
+        const fullName = `${user.first_name} ${user.last_name}`.trim();
+        userMap.set(fullName.toLowerCase(), user);
+      });
+
       // Group parking spaces by location and calculate stats
       const locationMap = new Map<string, LocationStats>();
 
@@ -66,22 +80,29 @@ export const useDashboardParking = () => {
       });
 
       // Convert active users to the required format
-      const users = parkingSpaces
+      const activeUsersList = parkingSpaces
         .filter((space) => space.user && space.user !== "None")
-        .map((space) => ({
-          id: space.id,
-          name: space.user,
-          vehicle_plate_number: space.user.vehicle_plate_number || "Unknown",
-          entryTime: new Date(space.time_in || space.allocated_at || space.updated_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          status: space.verified_by_user ? "Parked" : "Looking"
-        } as ActiveUser));
+        .map((space) => {
+          // Look up user details by name
+          const userName = typeof space.user === 'string' ? space.user : "Unknown";
+          const userDetails = userMap.get(userName.toLowerCase());
 
-        console.log(users);
+          return {
+            id: space.id,
+            name: userName,
+            vehicle_plate_number: userDetails?.vehicle_plate_number || "Unknown",
+            entryTime: new Date(
+              space.time_in || space.allocated_at || space.updated_at
+            ).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            status: space.verified_by_user ? "Parked" : "Looking"
+          } as ActiveUser;
+        });
 
       setLocations(Array.from(locationMap.values()));
-      setActiveUsers(users);
+      setActiveUsers(activeUsersList);
       setError(null);
     } catch (err) {
+      console.error("Error fetching dashboard data:", err);
       setError(err as PostgrestError);
     } finally {
       setIsLoading(false);
