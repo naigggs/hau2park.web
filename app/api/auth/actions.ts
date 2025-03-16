@@ -153,3 +153,20 @@ export async function registerUser(formData: FormData) {
   // Return success instead of redirecting
   return { success: true, message: "Registration pending approval" };
 }
+
+export async function ResetPassword(formData: FormData) {
+  const supabase = await createClient();
+  
+  const password = formData.get("password") as string;
+  
+  const { error } = await supabase.auth.updateUser({
+    password: password,
+  });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  revalidatePath("/", "layout");
+  redirect("/auth/login");
+}

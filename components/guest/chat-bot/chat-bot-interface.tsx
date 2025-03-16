@@ -585,6 +585,16 @@ export default function ChatPage() {
     []
   );
 
+  const handleCommandClick = useCallback((command: string) => {
+    const userMessage = createMessage(command);
+    setMessages((prev) => [...prev, userMessage]);
+
+    handleMessage(command).then(aiResponse => {
+      const aiMessage = createMessage(aiResponse, true);
+      setMessages((prev) => [...prev, aiMessage]);
+    });
+  }, [createMessage, handleMessage]);
+
   return (
     <div className="flex h-[calc(90vh-60px)] w-full">
       <Chat
@@ -596,6 +606,7 @@ export default function ChatPage() {
         append={append}
         suggestions={suggestions}
         onVoiceInput={handleVoiceInput}
+        onCommandClick={handleCommandClick}
       />
     </div>
   );

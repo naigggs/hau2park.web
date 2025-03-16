@@ -11,6 +11,7 @@ import { CopyButton } from "@/components/ui/copy-button"
 import { MessageInput } from "@/components/ui/message-input"
 import { MessageList } from "@/components/ui/message-list"
 import { PromptSuggestions } from "@/components/ui/prompt-suggestions"
+import { PresetCommands } from "./preset-commands"
 
 interface ChatPropsBase {
   handleSubmit: (
@@ -28,6 +29,7 @@ interface ChatPropsBase {
     rating: "thumbs-up" | "thumbs-down"
   ) => void
   onVoiceInput?: (text: string) => void
+  onCommandClick?: (command: string) => void
 }
 
 interface ChatPropsWithoutSuggestions extends ChatPropsBase {
@@ -54,6 +56,7 @@ export function Chat({
   className,
   onRateResponse,
   onVoiceInput,
+  onCommandClick,
 }: ChatProps) {
   const lastMessage = messages.at(-1)
   const isEmpty = messages.length === 0
@@ -122,17 +125,20 @@ export function Chat({
         handleSubmit={handleSubmit}
       >
         {({ files, setFiles }) => (
-          <MessageInput
-            value={input}
-            onChange={handleInputChange}
-            allowAttachments
-            files={files}
-            setFiles={setFiles}
-            stop={stop}
-            isGenerating={isGenerating}
-            enableInterrupt={true}
-            onVoiceInput={onVoiceInput}
-          />
+          <div className="flex flex-col w-full">
+            {onCommandClick && <PresetCommands onCommandClick={onCommandClick} />}
+            <MessageInput
+              value={input}
+              onChange={handleInputChange}
+              allowAttachments
+              files={files}
+              setFiles={setFiles}
+              stop={stop}
+              isGenerating={isGenerating}
+              enableInterrupt={true}
+              onVoiceInput={onVoiceInput}
+            />
+          </div>
         )}
       </ChatForm>
     </ChatContainer>
