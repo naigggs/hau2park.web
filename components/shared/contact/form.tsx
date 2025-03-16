@@ -23,7 +23,7 @@ const inputVariants = {
   focus: { scale: 1.01, transition: { type: "spring", stiffness: 400, damping: 10 } }
 }
 
-// Enhanced button variants with mobile-friendly interactions
+// Button variants
 const buttonVariants = {
   initial: { opacity: 0, y: 10 },
   animate: { 
@@ -117,32 +117,61 @@ export default function ContactForm() {
     setSubmitError(null)
     
     try {
-      // Get the email where you want to receive contact form submissions
-      // You could store this in an environment variable or config
-      const recipientEmail = process.env.EMAIL_USER || 'hau2park@gmail.com';
+      console.log("Starting form submission");
+      
+      // Always use hau2park@gmail.com as recipient
+      const recipientEmail = 'hau2park@gmail.com';
       
       const emailData = {
         to: recipientEmail,
         subject: `Contact Form: ${formData.subject}`,
         text: `Name: ${formData.name}\nEmail: ${formData.email}\n\nMessage: ${formData.message}`,
         html: createEmailHtml(formData),
+        replyTo: formData.email, // Add reply-to field so replies go to the submitter
       };
       
-      const response = await fetch('/api/admin/sendEmail', {
+      console.log(`Sending email to: ${recipientEmail}`);
+      
+      // Use the new API endpoint
+      const response = await fetch('/api/contact', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(emailData),
+        cache: 'no-store' // Prevent caching
       });
       
-      if (!response.ok) {
-        throw new Error('Failed to send message');
+      // Get response as text first for better debugging
+      const responseText = await response.text();
+      console.log("API response:", responseText);
+      
+      // Try to parse as JSON if possible
+      let responseData;
+      try {
+        responseData = JSON.parse(responseText);
+        console.log("Parsed response:", responseData);
+      } catch (e) {
+        console.error("Failed to parse API response as JSON:", responseText);
+        
+        // Check if response is HTML (indicating a routing issue)
+        if (responseText.trim().startsWith('<!DOCTYPE html>')) {
+          throw new Error("The API route is not configured correctly. Please check server configuration.");
+        }
+        
+        throw new Error("Invalid server response");
       }
       
+      if (!response.ok) {
+        const errorMsg = responseData?.error || `Server error: ${response.status} ${response.statusText}`;
+        throw new Error(errorMsg);
+      }
+      
+      // Success
+      console.log("Form submitted successfully");
       setIsSubmitted(true);
       
-      // Reset form after successful submission
+      // Reset form
       setTimeout(() => {
         setFormData({
           name: '',
@@ -155,12 +184,13 @@ export default function ContactForm() {
       
     } catch (error) {
       console.error('Error sending message:', error);
-      setSubmitError('Failed to send your message. Please try again later.');
+      setSubmitError(error instanceof Error ? error.message : 'Failed to send your message. Please try again later.');
     } finally {
       setIsSubmitting(false);
     }
   }
   
+  // The rest of the component remains unchanged
   if (isSubmitted) {
     return (
       <motion.div 
