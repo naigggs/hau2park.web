@@ -18,9 +18,26 @@ interface ActiveUser {
   status: "Parked" | "Looking";
 }
 
+// Define the ParkingSpace interface to match the database table structure
+interface ParkingSpace {
+  id: number;
+  name: string;
+  status: string;
+  confidence: number | null;
+  created_at: string;
+  updated_at: string;
+  user: string | null;
+  location: string;
+  allocated_at: string | null;
+  verified_by_user: boolean;
+  verified_at: string | null;
+  parking_end_time: string | null;
+}
+
 export const useDashboardParking = () => {
   const [locations, setLocations] = useState<LocationStats[]>([]);
   const [activeUsers, setActiveUsers] = useState<ActiveUser[]>([]);
+  const [parkingSpaces, setParkingSpaces] = useState<ParkingSpace[]>([]);
   const [error, setError] = useState<PostgrestError | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const supabase = createClient();
@@ -29,18 +46,20 @@ export const useDashboardParking = () => {
     setIsLoading(true);
     try {
       // Fetch all parking spaces
-      const { data: parkingSpaces, error: parkingError } = await supabase
+      const { data: parkingSpacesData, error: parkingError } = await supabase
         .from("parking_spaces")
         .select("*")
         .order("id", { ascending: true });
 
       if (parkingError) throw parkingError;
+      
+      // Store the raw parking spaces data for direct access
+      setParkingSpaces(parkingSpacesData);
 
       const { data: users, error: usersError } = await supabase
       .from("user_info")
       .select("user_id, first_name, last_name, vehicle_plate_number, email, phone");
     
-
       if (usersError) throw usersError;
 
       // Create a map of user names to user data for easy lookup
@@ -53,7 +72,7 @@ export const useDashboardParking = () => {
       // Group parking spaces by location and calculate stats
       const locationMap = new Map<string, LocationStats>();
 
-      parkingSpaces.forEach((space) => {
+      parkingSpacesData.forEach((space) => {
         const locationName = space.location || "Unknown";
         const current = locationMap.get(locationName) || {
           name: locationName,
@@ -80,7 +99,7 @@ export const useDashboardParking = () => {
       });
 
       // Convert active users to the required format
-      const activeUsersList = parkingSpaces
+      const activeUsersList = parkingSpacesData
         .filter((space) => space.user && space.user !== "None")
         .map((space) => {
           // Look up user details by name
@@ -92,7 +111,7 @@ export const useDashboardParking = () => {
             name: userName,
             vehicle_plate_number: userDetails?.vehicle_plate_number || "Unknown",
             entryTime: new Date(
-              space.time_in || space.allocated_at || space.updated_at
+              space.allocated_at || space.updated_at
             ).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             status: space.verified_by_user ? "Parked" : "Looking"
           } as ActiveUser;
@@ -146,6 +165,7 @@ export const useDashboardParking = () => {
   return {
     locations,
     activeUsers,
+    parkingSpaces, // Expose the raw parking spaces data
     error,
     isLoading,
     refresh: fetchData

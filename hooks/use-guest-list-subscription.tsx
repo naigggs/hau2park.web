@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/utils/supabase/client";
+import { GuestList } from "@/app/types/guest-list";
 
 export const useGuestListSubscription = () => {
   const [guestList, setGuestList] = useState<GuestList[]>([]);
