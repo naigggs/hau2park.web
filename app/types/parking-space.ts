@@ -1,4 +1,5 @@
 interface ParkingSpace {
+    verified_by_user: any;
     id: number;
     name: string;
     status: string

@@ -1,4 +1,5 @@
 interface QRCode {
+  status: string;
   id: number;
   user_id: string;
   secret_key: string;

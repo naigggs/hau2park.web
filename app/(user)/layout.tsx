@@ -27,7 +27,7 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "Guest Dashboard",
+  title: "User Dashboard",
 };
 
 export default async function UserLayout({
