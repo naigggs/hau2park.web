@@ -30,6 +30,9 @@ interface ChatPropsBase {
   ) => void
   onVoiceInput?: (text: string) => void
   onCommandClick?: (command: string) => void
+  availableParkingSpaces?: string[]
+  awaitingConfirmation?: string | null
+  entranceConfirmation?: boolean | null
 }
 
 interface ChatPropsWithoutSuggestions extends ChatPropsBase {
@@ -57,10 +60,18 @@ export function Chat({
   onRateResponse,
   onVoiceInput,
   onCommandClick,
+  availableParkingSpaces,
+  awaitingConfirmation,
+  entranceConfirmation
 }: ChatProps) {
+  const [isTextInputVisible, setIsTextInputVisible] = useState(false);
   const lastMessage = messages.at(-1)
   const isEmpty = messages.length === 0
   const isTyping = lastMessage?.role === "user"
+  
+  const toggleTextInput = () => {
+    setIsTextInputVisible(!isTextInputVisible);
+  };
 
   const messageOptions = useCallback(
     (message: Message) => ({
@@ -126,18 +137,29 @@ export function Chat({
       >
         {({ files, setFiles }) => (
           <div className="flex flex-col w-full">
-            {onCommandClick && <PresetCommands onCommandClick={onCommandClick} />}
-            <MessageInput
-              value={input}
-              onChange={handleInputChange}
-              allowAttachments
-              files={files}
-              setFiles={setFiles}
-              stop={stop}
-              isGenerating={isGenerating}
-              enableInterrupt={true}
-              onVoiceInput={onVoiceInput}
-            />
+            {onCommandClick && (
+              <PresetCommands 
+                onCommandClick={onCommandClick} 
+                isTextInputVisible={isTextInputVisible}
+                onToggleTextInput={toggleTextInput}
+                availableParkingSpaces={availableParkingSpaces}
+                awaitingConfirmation={awaitingConfirmation}
+                entranceConfirmation={entranceConfirmation}
+              />
+            )}
+            {isTextInputVisible && (
+              <MessageInput
+                value={input}
+                onChange={handleInputChange}
+                allowAttachments
+                files={files}
+                setFiles={setFiles}
+                stop={stop}
+                isGenerating={isGenerating}
+                enableInterrupt={true}
+                onVoiceInput={onVoiceInput}
+              />
+            )}
           </div>
         )}
       </ChatForm>
