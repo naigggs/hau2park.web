@@ -647,7 +647,7 @@ export default function GuestDashboard() {
                         <h3 className="text-sm font-medium text-muted-foreground mb-1">Reservation Time</h3>
                         <p className="font-medium flex items-center">
                           <Clock className="mr-1.5 h-4 w-4 text-blue-500" />
-                          {parkingStartTime} - {parkingEndTime}f
+                          {parkingStartTime} - {parkingEndTime}
                         </p>
                       </div>
                       <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">

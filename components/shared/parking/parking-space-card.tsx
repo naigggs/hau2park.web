@@ -1,13 +1,9 @@
-import { motion } from "framer-motion";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+"use client";
+
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { TimerOff } from "lucide-react";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { motion } from "framer-motion";
+import { Car, Clock, MapPin, User } from "lucide-react";
 
 interface ParkingSpaceCardProps {
   space: ParkingSpace;
@@ -15,81 +11,104 @@ interface ParkingSpaceCardProps {
 }
 
 export function ParkingSpaceCard({ space, onClick }: ParkingSpaceCardProps) {
-  const isIllegalParking = space.status === "Occupied" && space.user === "None";
-  const isReserved = space.status === "Reserved" && space.user;
-  const hasTimeLimit = space.time_out !== null && space.time_out !== undefined;
-  const isOvertime = space.parking_end_time && space.status === "Occupied" && 
-    new Date() > new Date(`${new Date().toDateString()} ${space.parking_end_time}`);
+  // Define status-specific styles
+  const statusStyles = {
+    Available: {
+      color: "text-green-600",
+      bg: "bg-green-50",
+      border: "border-green-200",
+      indicator: "bg-green-500",
+    },
+    Occupied: {
+      color: "text-red-600",
+      bg: "bg-red-50",
+      border: "border-red-200",
+      indicator: "bg-red-500",
+    },
+    Reserved: {
+      color: "text-amber-600",
+      bg: "bg-amber-50",
+      border: "border-amber-200",
+      indicator: "bg-amber-500",
+    },
+  };
+
+  const style = statusStyles[space.status as keyof typeof statusStyles] || 
+    statusStyles.Available;
 
   return (
     <motion.div
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 1 }}
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.1 }}
-      onClick={onClick}
-      className="cursor-pointer"
+      whileHover={{ y: -5 }}
+      whileTap={{ scale: 0.98 }}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
     >
-      <Card className="h-full">
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            {space.name}
-            {hasTimeLimit && (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger>
-                    <TimerOff className="h-4 w-4 text-muted-foreground" />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Has time limit</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            )}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col items-center justify-center">
-          <div className="relative">
-            {space.status === "Occupied" || space.status === "Reserved" ? (
-              <>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                  className={`w-16 h-16 ${space.status === "Reserved" ? "text-yellow-500" : "text-blue-500"}`}
-                >
-                  <path d="M3.375 4.5C2.339 4.5 1.5 5.34 1.5 6.375V13.5h12V6.375c0-1.036-.84-1.875-1.875-1.875h-8.25zM13.5 15h-12v2.625c0 1.035.84 1.875 1.875 1.875h.375a3 3 0 116 0h3a.75.75 0 00.75-.75V15z" />
-                  <path d="M8.25 19.5a1.5 1.5 0 10-3 0 1.5 1.5 0 003 0zM15.75 6.75a.75.75 0 00-.75.75v11.25c0 .087.015.17.042.248a3 3 0 015.958.464c.853-.175 1.522-.935 1.464-1.883a18.659 18.659 0 00-3.732-10.104 1.837 1.837 0 00-1.47-.725H15.75z" />
-                  <path d="M19.5 19.5a1.5 1.5 0 10-3 0 1.5 1.5 0 003 0z" />
-                </svg>
-              </>
-            ) : (
-              <div className="w-16 h-16 border-2 border-dashed border-gray-300 rounded-full flex items-center justify-center text-gray-400">
-                Empty
-              </div>
-            )}
+      <Card
+        onClick={onClick}
+        className={`cursor-pointer h-full overflow-hidden hover:shadow-lg transition-all duration-300 ${style.border} border-2`}
+      >
+        {/* Status indicator bar */}
+        <div className={`h-1 w-full ${style.indicator}`} />
+        
+        <CardContent className="p-4">
+          {/* Space name and status */}
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xl font-bold">{space.name}</h3>
+            <Badge 
+              variant="outline" 
+              className={`${style.bg} ${style.color} border-0`}
+            >
+              <span className="flex items-center gap-1">
+                <div className={`h-2 w-2 rounded-full ${style.indicator}`}></div>
+                {space.status}
+              </span>
+            </Badge>
           </div>
-          {isIllegalParking && (
-            <Badge variant="destructive" className="text-center uppercase">
-              Illegal Parking
-            </Badge>
+          
+          {/* Location */}
+          <div className="flex items-center text-sm text-gray-600 mb-3">
+            <MapPin className="h-3.5 w-3.5 mr-1.5 text-gray-400" />
+            <span className="truncate">{space.location || "No location"}</span>
+          </div>
+
+          {/* Divider */}
+          <div className="h-px bg-gray-100 my-3"></div>
+          
+          {/* User information */}
+          <div className="flex items-center text-sm text-gray-600 mb-2">
+            <User className="h-3.5 w-3.5 mr-1.5 text-gray-400" />
+            <span className="font-medium truncate">
+              {space.user || "Unoccupied"}
+            </span>
+          </div>
+          
+          {/* Time information */}
+          {space.allocated_at && (
+            <div className="flex items-center text-xs text-gray-500 mt-2 bg-gray-50 p-1.5 px-2 rounded-md">
+              <Clock className="h-3 w-3 mr-1.5 text-gray-400" />
+              <span>
+                Since {new Date(space.allocated_at).toLocaleString("en-US", {
+                  hour: "numeric",
+                  minute: "numeric",
+                  hour12: true,
+                })}
+              </span>
+            </div>
           )}
-          {isReserved && (
-            <Badge variant="default" className="text-center uppercase">
-              Reserved
-            </Badge>
+
+          {/* End time if available */}
+          {space.parking_end_time && (
+            <div className={`mt-2 text-xs px-2 py-1 rounded-md ${style.bg} ${style.color}`}>
+              <span className="font-semibold">
+                Until {new Date(`1970-01-01T${space.parking_end_time}`).toLocaleString('en-US', {
+                  hour: 'numeric',
+                  minute: '2-digit',
+                  hour12: true
+                })}
+              </span>
+            </div>
           )}
-          {isOvertime && (
-            <Badge variant="destructive" className="text-center uppercase mt-1">
-              Overtime
-            </Badge>
-          )}
-          <p className="mt-4 text-sm text-gray-600">Status: {space.status}</p>
-          <p className="text-sm text-gray-600">
-            Location: {space.location || "N/A"}
-          </p>
-          <p className="text-sm text-gray-600">User: {space.user || "N/A"}</p>
         </CardContent>
       </Card>
     </motion.div>
