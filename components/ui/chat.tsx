@@ -11,6 +11,7 @@ import { CopyButton } from "@/components/ui/copy-button"
 import { MessageInput } from "@/components/ui/message-input"
 import { MessageList } from "@/components/ui/message-list"
 import { PromptSuggestions } from "@/components/ui/prompt-suggestions"
+import { PresetCommands } from "./preset-commands"
 
 interface ChatPropsBase {
   handleSubmit: (
@@ -28,6 +29,10 @@ interface ChatPropsBase {
     rating: "thumbs-up" | "thumbs-down"
   ) => void
   onVoiceInput?: (text: string) => void
+  onCommandClick?: (command: string) => void
+  availableParkingSpaces?: string[]
+  awaitingConfirmation?: string | null
+  entranceConfirmation?: boolean | null
 }
 
 interface ChatPropsWithoutSuggestions extends ChatPropsBase {
@@ -54,10 +59,19 @@ export function Chat({
   className,
   onRateResponse,
   onVoiceInput,
+  onCommandClick,
+  availableParkingSpaces,
+  awaitingConfirmation,
+  entranceConfirmation
 }: ChatProps) {
+  const [isTextInputVisible, setIsTextInputVisible] = useState(false);
   const lastMessage = messages.at(-1)
   const isEmpty = messages.length === 0
   const isTyping = lastMessage?.role === "user"
+  
+  const toggleTextInput = () => {
+    setIsTextInputVisible(!isTextInputVisible);
+  };
 
   const messageOptions = useCallback(
     (message: Message) => ({
@@ -122,17 +136,31 @@ export function Chat({
         handleSubmit={handleSubmit}
       >
         {({ files, setFiles }) => (
-          <MessageInput
-            value={input}
-            onChange={handleInputChange}
-            allowAttachments
-            files={files}
-            setFiles={setFiles}
-            stop={stop}
-            isGenerating={isGenerating}
-            enableInterrupt={true}
-            onVoiceInput={onVoiceInput}
-          />
+          <div className="flex flex-col w-full">
+            {onCommandClick && (
+              <PresetCommands 
+                onCommandClick={onCommandClick} 
+                isTextInputVisible={isTextInputVisible}
+                onToggleTextInput={toggleTextInput}
+                availableParkingSpaces={availableParkingSpaces}
+                awaitingConfirmation={awaitingConfirmation}
+                entranceConfirmation={entranceConfirmation}
+              />
+            )}
+            {isTextInputVisible && (
+              <MessageInput
+                value={input}
+                onChange={handleInputChange}
+                allowAttachments
+                files={files}
+                setFiles={setFiles}
+                stop={stop}
+                isGenerating={isGenerating}
+                enableInterrupt={true}
+                onVoiceInput={onVoiceInput}
+              />
+            )}
+          </div>
         )}
       </ChatForm>
     </ChatContainer>

@@ -1,4 +1,5 @@
 export interface GuestList {
+  user_id_info: any;
   id: number;
   title: string;
   appointment_date: string;

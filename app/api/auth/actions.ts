@@ -126,7 +126,7 @@ export async function registerUser(formData: FormData) {
       const fileName = `${email}-id.${fileExt}`;
       
       const { error: uploadError } = await supabase.storage
-        .from("user-documents")
+        .from("hau2park")
         .upload(fileName, document1);
 
       if (uploadError) {
@@ -134,7 +134,7 @@ export async function registerUser(formData: FormData) {
       } else {
         // Only update if upload succeeded
         const { data: { publicUrl } } = supabase.storage
-          .from("user-documents") // Use the same bucket for consistency
+          .from("hau2park") // Use the same bucket for consistency
           .getPublicUrl(fileName);
 
         await supabase
@@ -152,4 +152,21 @@ export async function registerUser(formData: FormData) {
   
   // Return success instead of redirecting
   return { success: true, message: "Registration pending approval" };
+}
+
+export async function ResetPassword(formData: FormData) {
+  const supabase = await createClient();
+  
+  const password = formData.get("password") as string;
+  
+  const { error } = await supabase.auth.updateUser({
+    password: password,
+  });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  revalidatePath("/", "layout");
+  redirect("/auth/login");
 }

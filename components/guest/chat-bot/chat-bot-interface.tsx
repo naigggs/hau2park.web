@@ -66,7 +66,9 @@ export default function ChatPage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [conversationHistory, setConversationHistory] = useState<string[]>([]);
   const [awaitingParkingConfirmation, setAwaitingParkingConfirmation] = useState<string | null>(null);
-  
+  const [entranceConfirmation, setEntranceConfirmation] = useState<boolean | null>(false);
+  const [availableParkingSpaces, setAvailableParkingSpaces] = useState<string[]>([]);
+
   // Randomly select 3 suggestions on component mount
   const [suggestions, setSuggestions] = useState<string[]>([]);
   
@@ -93,6 +95,7 @@ export default function ChatPage() {
 
   // Helper function to detect entrance names with typo tolerance
   const detectEntrance = (text: string): 'Main' | 'Side' | null => {
+
     const lowercaseText = text.toLowerCase();
     
     // Main entrance variations
@@ -487,7 +490,8 @@ export default function ChatPage() {
             lastParkingQuery: prompt,
           });
           
-          return "What entrance are you coming from? (Main Entrance or Side Entrance)?";
+          setEntranceConfirmation(true);
+          return "Which entrance are you coming from? (Main Entrance or Side Entrance)?"; 
         } else if (
           response.includes('no') || 
           response.includes('nope') || 
@@ -534,6 +538,21 @@ export default function ChatPage() {
         }
       }
       
+      // Check if this is a parking availability response
+      const isAvailabilityResponse = 
+        aiResponse.toLowerCase().includes("available") && 
+        (aiResponse.toLowerCase().includes("parking") || aiResponse.toLowerCase().includes("space"));
+
+      if (isAvailabilityResponse) {
+        const spaces = extractAvailableParkingSpaces(aiResponse);
+        if (spaces.length > 0) {
+          setAvailableParkingSpaces(spaces);
+        }
+      } else if (!awaitingParkingConfirmation) {
+        // Reset available spaces if not a parking response
+        setAvailableParkingSpaces([]);
+      }
+
       return aiResponse;
     } finally {
       setIsGenerating(false);
@@ -585,6 +604,16 @@ export default function ChatPage() {
     []
   );
 
+  const handleCommandClick = useCallback((command: string) => {
+    const userMessage = createMessage(command);
+    setMessages((prev) => [...prev, userMessage]);
+
+    handleMessage(command).then(aiResponse => {
+      const aiMessage = createMessage(aiResponse, true);
+      setMessages((prev) => [...prev, aiMessage]);
+    });
+  }, [createMessage, handleMessage]);
+
   return (
     <div className="flex h-[calc(90vh-60px)] w-full">
       <Chat
@@ -594,9 +623,34 @@ export default function ChatPage() {
         handleInputChange={handleInputChange}
         isGenerating={isGenerating}
         append={append}
-        suggestions={suggestions}
+        suggestions={[]}
         onVoiceInput={handleVoiceInput}
+        onCommandClick={handleCommandClick}
+        availableParkingSpaces={availableParkingSpaces}
+        awaitingConfirmation={awaitingParkingConfirmation}
+        entranceConfirmation={entranceConfirmation}
       />
     </div>
   );
 }
+
+// Helper function to extract available parking spaces from AI response
+const extractAvailableParkingSpaces = (text: string): string[] => {
+  const parkingSpaces: string[] = [];
+  const regex = /P\d+/g;
+  const matches = text.match(regex);
+  
+  if (matches) {
+    const uniqueSpaces = [...new Set(matches)];
+    return uniqueSpaces.filter((space: string) => {
+      const contextBefore = text.substring(Math.max(0, text.indexOf(space) - 50), text.indexOf(space));
+      const isAvailable = 
+        !contextBefore.toLowerCase().includes("not available") &&
+        !contextBefore.toLowerCase().includes("unavailable") &&
+        !contextBefore.toLowerCase().includes("reserved") &&
+        !contextBefore.toLowerCase().includes("occupied");
+      return isAvailable;
+    });
+  }
+  return parkingSpaces;
+};
