@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -25,11 +25,60 @@ import { deleteUser } from "@/app/api/admin/actions";
 import { useToast } from "@/hooks/use-toast";
 import { useMediaQuery } from "@/hooks/use-media-query";
 
-export default function DeleteAccountDialog({ id, name }: { id: string; name: string }) {
-  const [open, setOpen] = useState(false);
+interface DeleteAccountDialogProps {
+  id: string;
+  name: string;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+}
+
+export default function DeleteAccountDialog({ 
+  id, 
+  name, 
+  open: controlledOpen, 
+  onOpenChange 
+}: DeleteAccountDialogProps) {
+  const [internalOpen, setInternalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const isMobile = useMediaQuery("(max-width: 768px)");
+  
+  // Determine if component is controlled or uncontrolled
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : internalOpen;
+  
+  // Setup effect to handle external trigger clicks via IDs
+  useEffect(() => {
+    // Create a handler for the trigger element with this ID
+    const triggerHandler = (e: MouseEvent) => {
+      setInternalOpen(true);
+    };
+    
+    // Get the trigger element
+    const triggerElement = document.getElementById(`delete-trigger-${id}`);
+    
+    // Add click listener if element exists
+    if (triggerElement) {
+      triggerElement.addEventListener('click', triggerHandler);
+    }
+    
+    // Clean up
+    return () => {
+      if (triggerElement) {
+        triggerElement.removeEventListener('click', triggerHandler);
+      }
+    };
+  }, [id]);
+  
+  // Handle state changes
+  const handleOpenChange = (newOpen: boolean) => {
+    if (!isControlled) {
+      setInternalOpen(newOpen);
+    }
+    if (onOpenChange) {
+      onOpenChange(newOpen);
+    }
+  };
   
   const handleDelete = async () => {
     setIsLoading(true);
@@ -47,7 +96,7 @@ export default function DeleteAccountDialog({ id, name }: { id: string; name: st
           title: "Success",
           description: "Account deleted successfully",
         });
-        setOpen(false);
+        handleOpenChange(false);
       }
     } catch (error) {
       toast({
@@ -72,19 +121,34 @@ export default function DeleteAccountDialog({ id, name }: { id: string; name: st
     </div>
   );
 
+  // Create visible but hidden elements to accept programmatic clicks
+  const hiddenTrigger = (
+    <span
+      id={`delete-trigger-${id}`}
+      className="hidden"
+      role="button"
+      tabIndex={-1}
+      aria-hidden="true"
+    />
+  );
+
   if (isMobile) {
     return (
       <>
-        <Button 
-          variant="ghost" 
-          className="flex-1 rounded-none h-11 font-medium text-destructive hover:bg-destructive/10 hover:text-destructive"
-          onClick={() => setOpen(true)}
-        >
-          <Trash2 className="h-3.5 w-3.5 mr-2" />
-          Delete
-        </Button>
+        {hiddenTrigger}
         
-        <Drawer open={open} onOpenChange={setOpen}>
+        {!isControlled && (
+          <Button 
+            variant="ghost" 
+            className="flex-1 rounded-none h-11 font-medium text-destructive hover:bg-destructive/10 hover:text-destructive"
+            onClick={() => handleOpenChange(true)}
+          >
+            <Trash2 className="h-3.5 w-3.5 mr-2" />
+            Delete
+          </Button>
+        )}
+        
+        <Drawer open={open} onOpenChange={handleOpenChange}>
           <DrawerContent>
             <DrawerHeader className="text-center">
               <DrawerTitle className="text-xl">Delete Account</DrawerTitle>
@@ -124,43 +188,53 @@ export default function DeleteAccountDialog({ id, name }: { id: string; name: st
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="text-destructive hover:bg-destructive/10 hover:text-destructive">
-          <Trash2 className="h-3.5 w-3.5" />
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle className="text-center text-xl">Delete Account</DialogTitle>
-          <DialogDescription className="text-center">
-            This action cannot be undone
-          </DialogDescription>
-        </DialogHeader>
-        {DialogContentComponent}
-        <DialogFooter className="flex justify-end space-x-2 pt-4">
-          <Button variant="outline" onClick={() => setOpen(false)} disabled={isLoading}>
-            Cancel
-          </Button>
-          <Button 
-            variant="destructive" 
-            onClick={handleDelete} 
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Deleting...
-              </>
-            ) : (
-              <>
-                <Trash2 className="mr-2 h-4 w-4" />
-                Delete Account
-              </>
-            )}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <>
+      {hiddenTrigger}
+      
+      <Dialog open={open} onOpenChange={handleOpenChange}>
+        {!isControlled && (
+          <DialogTrigger asChild>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+          </DialogTrigger>
+        )}
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="text-center text-xl">Delete Account</DialogTitle>
+            <DialogDescription className="text-center">
+              This action cannot be undone
+            </DialogDescription>
+          </DialogHeader>
+          {DialogContentComponent}
+          <DialogFooter className="flex justify-end space-x-2 pt-4">
+            <Button variant="outline" onClick={() => handleOpenChange(false)} disabled={isLoading}>
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={handleDelete} 
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete Account
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

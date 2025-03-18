@@ -611,54 +611,54 @@ export default function AccountsList() {
         <AddAccountDialog />
       </div>
       
-      {/* Mobile View: Tabs */}
-      <div className="block md:hidden">
-        <Tabs defaultValue="pending" value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-2 shadow-sm">
-            <TabsTrigger value="pending" className="flex items-center gap-2 py-2.5">
-              <UserCheck className="h-4 w-4" />
-              <span>Approvals</span>
-            </TabsTrigger>
-            <TabsTrigger value="accounts" className="flex items-center gap-2 py-2.5">
-              <Users className="h-4 w-4" />
-              <span>Accounts</span>
-            </TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="pending" className="mt-4 flex-1 overflow-hidden">
-            <Card className="border-border/40 h-full flex flex-col shadow-sm rounded-lg">
-              <CardHeader className="pb-2 border-b">
-                <CardTitle className="text-lg">Pending Sign-ups</CardTitle>
-              </CardHeader>
-              <CardContent className="p-4 overflow-auto">
-                <PendingApprovalsCard />
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="accounts" className="mt-4 flex-1 overflow-hidden">
-            <Card className="border-border/40 h-full flex flex-col shadow-sm rounded-lg">
-              <CardHeader className="pb-2 border-b">
-                <div className="flex flex-col gap-3">
-                  <CardTitle className="text-lg">All Accounts</CardTitle>
-                  <div className="relative">
-                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Search accounts..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-8"
-                    />
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="p-4 overflow-auto">
-                <MobileUsersList />
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      </div>
+{/* Mobile View: Tabs */}
+<div className="block md:hidden">
+  <Tabs defaultValue="pending" value={activeTab} onValueChange={setActiveTab} className="mb-2 pt-2">
+    <TabsList className="grid w-full grid-cols-2 shadow-sm -mt-4 pb-12 ">
+      <TabsTrigger value="pending" className="flex items-center gap-2 py-3 px-4 h-auto">
+        <UserCheck className="h-4 w-4" />
+        <span>Approvals</span>
+      </TabsTrigger>
+      <TabsTrigger value="accounts" className="flex items-center gap-2 py-3 px-4 h-auto">
+        <Users className="h-4 w-4" />
+        <span>Accounts</span>
+      </TabsTrigger>
+    </TabsList>
+    
+    <TabsContent value="pending" className="mt-4 flex-1 overflow-hidden">
+      <Card className="border-border/40 h-full flex flex-col shadow-sm rounded-lg">
+        <CardHeader className="pb-2 border-b">
+          <CardTitle className="text-lg">Pending Sign-ups</CardTitle>
+        </CardHeader>
+        <CardContent className="p-4 overflow-auto">
+          <PendingApprovalsCard />
+        </CardContent>
+      </Card>
+    </TabsContent>
+    
+    <TabsContent value="accounts" className="mt-4 flex-1 overflow-hidden">
+      <Card className="border-border/40 h-full flex flex-col shadow-sm rounded-lg">
+        <CardHeader className="pb-2 border-b">
+          <div className="flex flex-col gap-3">
+            <CardTitle className="text-lg">All Accounts</CardTitle>
+            <div className="relative">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search accounts..."
+                value={searchTerm || ""}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-8"
+              />
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="p-4 overflow-auto">
+          <MobileUsersList />
+        </CardContent>
+      </Card>
+    </TabsContent>
+  </Tabs>
+</div>
       
       {/* Desktop View: Side by Side */}
       <div className="hidden md:flex flex-col lg:flex-row gap-6 h-full">
