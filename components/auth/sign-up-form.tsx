@@ -166,13 +166,12 @@ export function SignUpForm({
     setPhone(limitedDigits);
   };
 
-  // Validate file size
   const validateFileSize = (file: File) => {
-    // 1MB in bytes
-    const maxSize = 1 * 1024 * 1024;
+    // 10MB in bytes
+    const maxSize = 10 * 1024 * 1024;
     
     if (file.size > maxSize) {
-      setFileError(`File size must be less than 1MB. Current size: ${(file.size / (1024 * 1024)).toFixed(2)}MB`);
+      setFileError(`File size must be less than 10MB. Current size: ${(file.size / (1024 * 1024)).toFixed(2)}MB`);
       return false;
     }
     
@@ -537,7 +536,7 @@ export function SignUpForm({
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="document1">Upload ID <span className="text-xs text-muted-foreground">(Max: 1MB)</span></Label>
+              <Label htmlFor="document1">Upload ID <span className="text-xs text-muted-foreground">(Max: 10MB)</span></Label>
               <div 
                 className={cn(
                   "border-2 border-dashed rounded-md border-gray-300 p-6 flex flex-col items-center justify-center cursor-pointer hover:border-primary transition-colors",
@@ -562,7 +561,7 @@ export function SignUpForm({
                   ) : (
                     <>
                       <p className="font-medium">Click to upload</p>
-                      <p className="text-xs text-muted-foreground">PNG, JPG or PDF (max. 1MB)</p>
+                      <p className="text-xs text-muted-foreground">PNG, JPG or PDF (max. 10MB)</p>
                     </>
                   )}
                 </div>
