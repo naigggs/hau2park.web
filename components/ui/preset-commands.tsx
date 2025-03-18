@@ -42,19 +42,23 @@ export function PresetCommands({
     ? defaultCommands
     : awaitingConfirmation
     ? ["Yes", "No, I will find another parking spot", "Reset quick actions"]
+    : entranceConfirmation
+    ? ["Main Entrance", "Side Entrance", "Reset quick actions"]
     : availableParkingSpaces.length > 0
     ? [
         ...availableParkingSpaces.map((space) => `I want to park in ${space}`),
         "Reset quick actions",
       ]
-    : entranceConfirmation
-    ? ["Main Entrance", "Side Entrance", "Reset quick actions"]
     : defaultCommands;
 
   // Update commands when props change
   useEffect(() => {
-    setIsUsingDefaultCommands(false);
-  }, [awaitingConfirmation, availableParkingSpaces]);
+    setIsUsingDefaultCommands(
+      !awaitingConfirmation && 
+      !entranceConfirmation && 
+      availableParkingSpaces.length === 0
+    );
+  }, [awaitingConfirmation, availableParkingSpaces, entranceConfirmation]);
 
   const presetCommands = [
     {
