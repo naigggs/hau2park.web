@@ -23,7 +23,7 @@ import { User } from "./types";
 import Link from "next/link";
 
 export function NavUser() {
-  const { isMobile } = useSidebar();
+  const { isMobile, setOpenMobile } = useSidebar();
   const supabase = createClient();
 
   const [user, setUser] = useState<User>();
@@ -50,6 +50,14 @@ export function NavUser() {
     fetchUserInfo();
   }, []);
 
+  // Function to handle navigation item clicks
+  const handleNavClick = () => {
+    // Only close the sidebar on mobile
+    if (isMobile) {
+      setOpenMobile(false);
+    }
+  };
+
   return (
     <SidebarMenu>
       <SidebarMenuItem>
@@ -62,8 +70,8 @@ export function NavUser() {
               <Avatar className="h-8 w-8 rounded-lg">
                 <AvatarImage src={user?.avatar} alt={user?.first_name} />
                 <AvatarFallback className="rounded-lg">
-                  {user?.first_name[0]}
-                  {user?.last_name[0]}
+                  {user?.first_name?.[0]}
+                  {user?.last_name?.[0]}
                 </AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
@@ -88,8 +96,8 @@ export function NavUser() {
                 <Avatar className="h-8 w-8 rounded-lg">
                 <AvatarImage src={user?.avatar} alt={user?.first_name} />
                   <AvatarFallback className="rounded-lg">
-                  {user?.first_name[0]}
-                  {user?.last_name[0]}
+                  {user?.first_name?.[0]}
+                  {user?.last_name?.[0]}
                   </AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
@@ -104,16 +112,19 @@ export function NavUser() {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <Link href="/admin/settings">
-              <DropdownMenuItem>
-                <BadgeCheck />
-                Settings
-              </DropdownMenuItem>
+              <Link href="/admin/settings" onClick={handleNavClick}>
+                <DropdownMenuItem>
+                  <BadgeCheck />
+                  Settings
+                </DropdownMenuItem>
               </Link>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem
               onClick={async () => {
+                if (isMobile) {
+                  setOpenMobile(false);
+                }
                 const { error } = await supabase.auth.signOut();
                 if (error) {
                   console.error("Error logging out:", error.message);
