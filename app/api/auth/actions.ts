@@ -126,7 +126,7 @@ export async function registerUser(formData: FormData) {
       const fileName = `${email}-id.${fileExt}`;
       
       const { error: uploadError } = await supabase.storage
-        .from("user-documents")
+        .from("hau2park")
         .upload(fileName, document1);
 
       if (uploadError) {
@@ -134,7 +134,7 @@ export async function registerUser(formData: FormData) {
       } else {
         // Only update if upload succeeded
         const { data: { publicUrl } } = supabase.storage
-          .from("user-documents") // Use the same bucket for consistency
+          .from("hau2park") // Use the same bucket for consistency
           .getPublicUrl(fileName);
 
         await supabase
