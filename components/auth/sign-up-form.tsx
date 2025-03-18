@@ -166,13 +166,12 @@ export function SignUpForm({
     setPhone(limitedDigits);
   };
 
-  // Validate file size
   const validateFileSize = (file: File) => {
-    // 1MB in bytes
-    const maxSize = 1 * 1024 * 1024;
+    // 10MB in bytes
+    const maxSize = 10 * 1024 * 1024;
     
     if (file.size > maxSize) {
-      setFileError(`File size must be less than 1MB. Current size: ${(file.size / (1024 * 1024)).toFixed(2)}MB`);
+      setFileError(`File size must be less than 10MB. Current size: ${(file.size / (1024 * 1024)).toFixed(2)}MB`);
       return false;
     }
     
