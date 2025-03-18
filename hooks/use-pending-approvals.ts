@@ -13,6 +13,8 @@ interface PendingApproval {
   vehicle_plate_number: string;
   status: string;
   created_at: string;
+  id_link: string | null; // Added id_link field
+  phone: number | null;
 }
 
 interface UsePendingApprovalsState {
