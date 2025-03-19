@@ -45,9 +45,10 @@ import { useMediaQuery } from "@/hooks/use-media-query";
 interface GuestModalProps {
   guest: GuestList | null;
   onClose: () => void;
+  onStatusChange?: (guestId: number, newStatus: string) => void;
 }
 
-export function GuestModal({ guest, onClose }: Readonly<GuestModalProps>) {
+export function GuestModal({ guest, onClose, onStatusChange }: Readonly<GuestModalProps>) {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const isDesktopUI = useMediaQuery("(min-width: 768px)");
@@ -89,6 +90,7 @@ export function GuestModal({ guest, onClose }: Readonly<GuestModalProps>) {
       try {
         setIsLoading(true);
         await updateVisitorApprovalStatus(guest.id, "Approved", guest.user_id.email, guest.user_id.user_id, guest.appointment_date);
+        onStatusChange?.(guest.id, "Approved");
         toast({
           title: "Guest approved",
           description: "The guest has been successfully approved.",
@@ -111,6 +113,7 @@ export function GuestModal({ guest, onClose }: Readonly<GuestModalProps>) {
       try {
         setIsLoading(true);
         await updateVisitorApprovalStatus(guest.id, "Declined", guest.user_id.email, guest.user_id.user_id, guest.appointment_date);
+        onStatusChange?.(guest.id, "Declined");
         toast({
           title: "Guest declined",
           description: "The guest has been declined.",

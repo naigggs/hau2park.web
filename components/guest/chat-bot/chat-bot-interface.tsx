@@ -28,7 +28,10 @@ const ENTRANCES = {
   Side: { lat: 15.133148647059924, lng: 120.5914340202961 },
 };
 
-const PARKING_DESTINATION = { lat: 15.132573845065755, lng: 120.58929898215513 };
+const PARKING_DESTINATION = {
+  lat: 15.132573845065755,
+  lng: 120.58929898215513,
+};
 
 // Expanded list of suggestion options
 const ALL_SUGGESTIONS = [
@@ -65,20 +68,53 @@ export default function ChatPage() {
   const [input, setInput] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [conversationHistory, setConversationHistory] = useState<string[]>([]);
-  const [awaitingParkingConfirmation, setAwaitingParkingConfirmation] = useState<string | null>(null);
-  const [entranceConfirmation, setEntranceConfirmation] = useState<boolean | null>(false);
-  const [availableParkingSpaces, setAvailableParkingSpaces] = useState<string[]>([]);
+  const [awaitingParkingConfirmation, setAwaitingParkingConfirmation] =
+    useState<string | null>(null);
+  const [entranceConfirmation, setEntranceConfirmation] = useState<
+    boolean | null
+  >(false);
+  const [availableParkingSpaces, setAvailableParkingSpaces] = useState<
+    string[]
+  >([]);
+  const [isUserParked, setIsUserParked] = useState<boolean>(false);
+  const [userParkingSpace, setUserParkingSpace] = useState<string | null>(null);
+  const [parkingStatus, setParkingStatus] = useState<
+    "Occupied" | "Reserved" | null
+  >(null);
+
+  // Fetch user's parking status on component mount
+  useEffect(() => {
+    const fetchParkingStatus = async () => {
+      if (!firstName && !lastName) return;
+
+      const supabase = createClient();
+      const { data: parkingData, error } = await supabase
+        .from("parking_spaces")
+        .select("*")
+        .eq("user", `${firstName} ${lastName}`)
+        .in("status", ["Occupied", "Reserved"])
+        .single();
+
+      if (parkingData) {
+        console.log("User is parked:", parkingData);
+        setIsUserParked(true);
+        setUserParkingSpace(parkingData.name);
+        setParkingStatus(parkingData.status as "Occupied" | "Reserved");
+      }
+    };
+    fetchParkingStatus();
+  }, [userId, firstName, lastName]);
 
   // Randomly select 3 suggestions on component mount
   const [suggestions, setSuggestions] = useState<string[]>([]);
-  
+
   useEffect(() => {
     // Shuffle and take 3 random suggestions
     const getRandomSuggestions = () => {
       const shuffled = [...ALL_SUGGESTIONS].sort(() => 0.5 - Math.random());
       return shuffled.slice(0, 3);
     };
-    
+
     setSuggestions(getRandomSuggestions());
   }, []);
 
@@ -94,31 +130,30 @@ export default function ChatPage() {
   };
 
   // Helper function to detect entrance names with typo tolerance
-  const detectEntrance = (text: string): 'Main' | 'Side' | null => {
-
+  const detectEntrance = (text: string): "Main" | "Side" | null => {
     const lowercaseText = text.toLowerCase();
-    
+
     // Main entrance variations
     if (
-      lowercaseText.includes('main') || 
-      lowercaseText.includes('mian') || 
-      lowercaseText.includes('man') ||
-      lowercaseText.includes('mein') ||
-      lowercaseText.includes('front')
+      lowercaseText.includes("main") ||
+      lowercaseText.includes("mian") ||
+      lowercaseText.includes("man") ||
+      lowercaseText.includes("mein") ||
+      lowercaseText.includes("front")
     ) {
-      return 'Main';
+      return "Main";
     }
-    
+
     // Side entrance variations
     if (
-      lowercaseText.includes('side') || 
-      lowercaseText.includes('sied') || 
-      lowercaseText.includes('sid') || 
-      lowercaseText.includes('back')
+      lowercaseText.includes("side") ||
+      lowercaseText.includes("sied") ||
+      lowercaseText.includes("sid") ||
+      lowercaseText.includes("back")
     ) {
-      return 'Side';
+      return "Side";
     }
-    
+
     return null;
   };
 
@@ -126,32 +161,34 @@ export default function ChatPage() {
   const isRouteRequest = (text: string): boolean => {
     const lowercaseText = text.toLowerCase();
     return (
-      (lowercaseText.includes('route') || 
-       lowercaseText.includes('direction') || 
-       lowercaseText.includes('how to get') ||
-       lowercaseText.includes('path') ||
-       lowercaseText.includes('way to') ||
-       lowercaseText.includes('map')) &&
-      (lowercaseText.includes('from') || lowercaseText.includes('to'))
+      (lowercaseText.includes("route") ||
+        lowercaseText.includes("direction") ||
+        lowercaseText.includes("how to get") ||
+        lowercaseText.includes("path") ||
+        lowercaseText.includes("way to") ||
+        lowercaseText.includes("map")) &&
+      (lowercaseText.includes("from") || lowercaseText.includes("to"))
     );
   };
 
   // Create message function with improved map detection
   const createMessage = useCallback((response: string, isAi = false) => {
     const context = ChatContextManager.getContext();
-    
+
     // Detect if this is a route-related response
-    const isRouteMessage = isAi && (
+    const isRouteMessage =
+      isAi &&
       // Normal flow with context values set
-      (context.selectedParking && 
-       context.entrance && 
-       response.includes(`Here's the route to ${context.selectedParking} from ${context.entrance} Entrance`)) ||
-      // Direct route request detection for any route/directions response
-      (response.toLowerCase().includes('route') && 
-       (response.toLowerCase().includes('from main entrance') || 
-        response.toLowerCase().includes('from side entrance')))
-    );
-    
+      ((context.selectedParking &&
+        context.entrance &&
+        response.includes(
+          `Here's the route to ${context.selectedParking} from ${context.entrance} Entrance`
+        )) ||
+        // Direct route request detection for any route/directions response
+        (response.toLowerCase().includes("route") &&
+          (response.toLowerCase().includes("from main entrance") ||
+            response.toLowerCase().includes("from side entrance"))));
+
     // Add 5-minute warning if this is a route message and it doesn't already have it
     if (isRouteMessage && !response.includes("5 minutes")) {
       response = `${response}. Remember, you have 5 minutes to arrive and park in your reserved space, or your reservation will expire. After parking, you'll need to verify your parking when prompted.`;
@@ -164,10 +201,10 @@ export default function ChatPage() {
     let mapEntrance = context.entrance;
     if (!mapEntrance && showMap) {
       // Try to extract entrance from response text
-      if (response.toLowerCase().includes('from main entrance')) {
-        mapEntrance = 'Main';
-      } else if (response.toLowerCase().includes('from side entrance')) {
-        mapEntrance = 'Side';
+      if (response.toLowerCase().includes("from main entrance")) {
+        mapEntrance = "Main";
+      } else if (response.toLowerCase().includes("from side entrance")) {
+        mapEntrance = "Side";
       }
     }
 
@@ -181,20 +218,22 @@ export default function ChatPage() {
     }
 
     const message: Message = {
-      id: `${Date.now()}-${isAi ? 'ai' : 'user'}`,
+      id: `${Date.now()}-${isAi ? "ai" : "user"}`,
       content: response,
       role: isAi ? "assistant" : "user",
-      experimental_attachments: showMap ? [
-        {
-          name: "map",
-          contentType: "application/json",
-          url: "data:application/json,{}", // Minimal valid data URL
-          mapData: {
-            origin: ENTRANCES[mapEntrance || 'Main'],
-            destination: PARKING_DESTINATION,
-          }
-        }
-      ] : undefined
+      experimental_attachments: showMap
+        ? [
+            {
+              name: "map",
+              contentType: "application/json",
+              url: "data:application/json,{}", // Minimal valid data URL
+              mapData: {
+                origin: ENTRANCES[mapEntrance || "Main"],
+                destination: PARKING_DESTINATION,
+              },
+            },
+          ]
+        : undefined,
     };
 
     return message;
@@ -207,11 +246,11 @@ export default function ChatPage() {
         true
       );
       setMessages((prev) => [...prev, message]);
-      
+
       // Use empty strings instead of null
       ChatContextManager.updateContext({
         selectedParking: "",
-        lastParkingQuery: ""
+        lastParkingQuery: "",
       });
     };
 
@@ -223,341 +262,457 @@ export default function ChatPage() {
       setMessages((prev) => [...prev, message]);
     };
 
-    window.addEventListener('parkingTaken', handleParkingTaken as EventListener);
-    window.addEventListener('parkingVerified', handleParkingVerified as EventListener);
+    window.addEventListener(
+      "parkingTaken",
+      handleParkingTaken as EventListener
+    );
+    window.addEventListener(
+      "parkingVerified",
+      handleParkingVerified as EventListener
+    );
 
     return () => {
-      window.removeEventListener('parkingTaken', handleParkingTaken as EventListener);
-      window.removeEventListener('parkingVerified', handleParkingVerified as EventListener);
+      window.removeEventListener(
+        "parkingTaken",
+        handleParkingTaken as EventListener
+      );
+      window.removeEventListener(
+        "parkingVerified",
+        handleParkingVerified as EventListener
+      );
     };
   }, [createMessage]);
 
-  const handleMessage = useCallback(async (prompt: string) => {
-    setIsGenerating(true);
-  
-    try {
-      // CRITICAL: Command detection logic that exactly matches server-side implementation
-      const isCommandRequest = (text: string) => {
-        if (!text) return false;
-        
-        // Convert to lowercase and trim
-        const lowerText = text.toLowerCase().trim();
-        
-        // Direct command-related terms
-        if (
-          lowerText === "commands" ||
-          lowerText === "command" ||
-          lowerText === "command list" ||
-          lowerText === "available commands" ||
-          lowerText === "show commands" ||
-          lowerText === "list commands" ||
-          lowerText === "help" ||
-          lowerText === "menu" ||
-          lowerText === "what commands are available" ||
-          lowerText === "what are the commands" ||
-          lowerText === "show me the commands" ||
-          lowerText === "available command"
-        ) {
-          return true;
-        }
-        
-        // Contains command-related terms
-        if (
-          lowerText.includes("command") ||
-          lowerText.includes("commands") ||
-          lowerText.includes("help me") ||
-          (lowerText.includes("what") && lowerText.includes("do")) ||
-          (lowerText.includes("what") && lowerText.includes("commands")) ||
-          (lowerText.includes("show") && lowerText.includes("commands")) ||
-          (lowerText.includes("list") && lowerText.includes("commands")) ||
-          (lowerText.includes("available") && lowerText.includes("commands")) ||
-          lowerText.includes("what can you do") ||
-          lowerText.includes("what can i do") ||
-          lowerText.includes("what can i ask") ||
-          lowerText.includes("how to use") ||
-          lowerText.includes("instructions") ||
-          lowerText.includes("instruction") ||
-          lowerText.includes("capabilities") ||
-          lowerText.includes("capability") ||
-          lowerText.includes("functions") ||
-          lowerText.includes("function")
-        ) {
-          return true;
-        }
-        
-        return false;
-      };
-  
-      // CRITICAL: Reset context for command requests
-      if (isCommandRequest(prompt)) {
-        // Clear all navigation context when user asks for commands
-        ChatContextManager.updateContext({
-          selectedParking: "",
-          entrance: undefined,
-          lastParkingQuery: ""
-        });
-        console.log("Command request detected, context reset");
-      }
-      
-      const context = ChatContextManager.getContext();
-      setConversationHistory(prev => [...prev, prompt]);
-      
-      // Check for direct route requests first      
-      if (isRouteRequest(prompt)) {
-        const parkingSpace = extractParkingSpace(prompt);
-        const entrance = detectEntrance(prompt);
-        
-        if (parkingSpace && entrance) {
-          // Update context for direct route requests
-          ChatContextManager.updateContext({
-            selectedParking: parkingSpace,
-            entrance: entrance
-          });
-          
-          // Return a formatted route response
-          return `Here's the route to ${parkingSpace} from ${entrance} Entrance. Remember, you have 5 minutes to arrive and park in your reserved space, or your reservation will expire. After parking, you'll need to verify your parking when prompted.`;
-        }
-      }
+  const handleMessage = useCallback(
+    async (prompt: string) => {
+      setIsGenerating(true);
 
-      // Check for parking space selection with typo tolerance
-      if (prompt.toLowerCase().includes("park") || 
-          prompt.toLowerCase().includes("want") || 
-          prompt.toLowerCase().includes("reserve")) {
-        
-        const parkingSpace = extractParkingSpace(prompt);
-        if (parkingSpace) {
-          if (!userId) {
-            return 'You must be logged in to reserve a parking space.';
-          }
-
-          // Check the current status of the parking space
+      try {
+        // Add cancellation handling
+        if (
+          prompt.toLowerCase().includes("cancel") &&
+          prompt.toLowerCase().includes("reservation")
+        ) {
           const supabase = createClient();
+
+          // Find the user's reserved parking space
           const { data: parkingData, error: fetchError } = await supabase
             .from("parking_spaces")
-            .select("status")
-            .eq("name", parkingSpace)
+            .select("name, status")
+            .eq("user", `${firstName} ${lastName}`)
+            .eq("status", "Reserved")
             .single();
 
           if (fetchError) {
-            console.error('Error fetching parking space:', fetchError);
-            return 'Sorry, there was an error checking the parking space. Please try again.';
+            console.error("Error fetching parking space:", fetchError);
+            return "Sorry, there was an error checking your reservation. Please try again.";
           }
 
           if (!parkingData) {
-            return `Parking space ${parkingSpace} does not exist.`;
+            return "You don't have any active parking reservations to cancel.";
           }
 
-          if (parkingData.status !== "Open") {
-            return `Parking space ${parkingSpace} is already ${parkingData.status.toLowerCase()}. Please choose another parking space.`;
+          // Update the parking space status to Open
+          const { error: updateError } = await supabase
+            .from("parking_spaces")
+            .update({
+              status: "Open",
+              user: "None",
+              updated_at: new Date().toISOString(),
+              parking_end_time: null,
+              allocated_at: null,
+            })
+            .eq("name", parkingData.name);
+
+          if (updateError) {
+            console.error("Error canceling reservation:", updateError);
+            return "Sorry, there was an error canceling your reservation. Please try again.";
           }
 
-          setAwaitingParkingConfirmation(parkingSpace);
-          return `Are you sure you want to park in ${parkingSpace}?`;
+          // Reset parking status states
+          setIsUserParked(false);
+          setUserParkingSpace(null);
+          setParkingStatus(null);
+
+          // Reset context
+          ChatContextManager.updateContext({
+            selectedParking: "",
+            entrance: undefined,
+            lastParkingQuery: "",
+          });
+
+          return `Your reservation for parking space ${parkingData.name} has been cancelled. You can reserve another parking space when needed.`;
         }
-      }
 
-      if (awaitingParkingConfirmation) {
-        const response = prompt.toLowerCase();
-        // Expanded acceptance of confirmation with typo tolerance
-        if (response.includes('yes') || 
-            response.includes('yeah') || 
-            response.includes('sure') || 
-            response.includes('yep') || 
-            response.includes('correct') ||
-            response.includes('ok') ||
-            response.includes('okay')) {
-          const supabase = createClient();
+        // CRITICAL: Command detection logic that exactly matches server-side implementation
+        const isCommandRequest = (text: string) => {
+          if (!text) return false;
 
-          // First check if user is a guest by querying user_roles
-          const { data: roleData, error: roleError } = await supabase
-            .from("user_roles")
-            .select("role")
-            .eq("user_id", userId)
-            .single();
+          // Convert to lowercase and trim
+          const lowerText = text.toLowerCase().trim();
 
-          if (roleError) {
-            setAwaitingParkingConfirmation(null);
-            console.error('Error checking user role:', roleError);
-            return 'Sorry, there was an error verifying your account type. Please try again.';
+          // Direct command-related terms
+          if (
+            lowerText === "commands" ||
+            lowerText === "command" ||
+            lowerText === "command list" ||
+            lowerText === "available commands" ||
+            lowerText === "show commands" ||
+            lowerText === "list commands" ||
+            lowerText === "help" ||
+            lowerText === "menu" ||
+            lowerText === "what commands are available" ||
+            lowerText === "what are the commands" ||
+            lowerText === "show me the commands" ||
+            lowerText === "available command"
+          ) {
+            return true;
           }
 
-          // If user is a guest, get their latest parking request
-          if (roleData?.role === "Guest") {
-            const { data: parkingRequest, error: requestError } = await supabase
-              .from("guest_parking_request")
-              .select("*")
-              .eq("user_id", userId)
-              .eq("status", "Approved")
-              .order('created_at', { ascending: false })
-              .limit(1)
-              .single();
+          // Contains command-related terms
+          if (
+            lowerText.includes("command") ||
+            lowerText.includes("commands") ||
+            lowerText.includes("help me") ||
+            (lowerText.includes("what") && lowerText.includes("do")) ||
+            (lowerText.includes("what") && lowerText.includes("commands")) ||
+            (lowerText.includes("show") && lowerText.includes("commands")) ||
+            (lowerText.includes("list") && lowerText.includes("commands")) ||
+            (lowerText.includes("available") &&
+              lowerText.includes("commands")) ||
+            lowerText.includes("what can you do") ||
+            lowerText.includes("what can i do") ||
+            lowerText.includes("what can i ask") ||
+            lowerText.includes("how to use") ||
+            lowerText.includes("instructions") ||
+            lowerText.includes("instruction") ||
+            lowerText.includes("capabilities") ||
+            lowerText.includes("capability") ||
+            lowerText.includes("functions") ||
+            lowerText.includes("function")
+          ) {
+            return true;
+          }
 
-            if (requestError) {
-              setAwaitingParkingConfirmation(null);
-              console.error('Error fetching parking request:', requestError);
-              return 'Sorry, there was an error fetching your parking request. Please ensure you have an approved parking request.';
+          return false;
+        };
+
+        // CRITICAL: Reset context for command requests
+        if (isCommandRequest(prompt)) {
+          // Clear all navigation context when user asks for commands
+          ChatContextManager.updateContext({
+            selectedParking: "",
+            entrance: undefined,
+            lastParkingQuery: "",
+          });
+          console.log("Command request detected, context reset");
+        }
+
+        const context = ChatContextManager.getContext();
+        setConversationHistory((prev) => [...prev, prompt]);
+
+        // Check for direct route requests first
+        if (isRouteRequest(prompt)) {
+          const parkingSpace = extractParkingSpace(prompt);
+          const entrance = detectEntrance(prompt);
+
+          if (parkingSpace && entrance) {
+            // Update context for direct route requests
+            ChatContextManager.updateContext({
+              selectedParking: parkingSpace,
+              entrance: entrance,
+            });
+
+            // Return a formatted route response
+            return `Here's the route to ${parkingSpace} from ${entrance} Entrance. Remember, you have 5 minutes to arrive and park in your reserved space, or your reservation will expire. After parking, you'll need to verify your parking when prompted.`;
+          }
+        }
+
+        // Check for parking space selection with typo tolerance
+        if (
+          prompt.toLowerCase().includes("park") ||
+          prompt.toLowerCase().includes("want") ||
+          prompt.toLowerCase().includes("reserve")
+        ) {
+          const parkingSpace = extractParkingSpace(prompt);
+          if (parkingSpace) {
+            if (!userId) {
+              return "You must be logged in to reserve a parking space.";
             }
 
-            if (!parkingRequest) {
-              setAwaitingParkingConfirmation(null);
-              return 'You need an approved parking request before you can park. Please submit a parking request first.';
-            }
-
-            // Check if trying to park outside of approved time window
-            const currentTime = new Date();
-            const parkingStartTime = new Date(parkingRequest.parking_start_time);
-            const parkingEndTime = new Date(parkingRequest.parking_end_time);
-
-            if (currentTime < parkingStartTime || currentTime > parkingEndTime) {
-              setAwaitingParkingConfirmation(null);
-              return `You can only park during your approved time window: ${parkingRequest.parking_start_time} to ${parkingRequest.parking_end_time}`;
-            }
-
-            // If within time window, proceed with parking space status check
-            const { data: parkingData, error: parkingError } = await supabase
-              .from("parking_spaces")
-              .select("status")
-              .eq("name", awaitingParkingConfirmation)
-              .single();
-
-            if (parkingError) {
-              setAwaitingParkingConfirmation(null);
-              console.error('Error fetching parking space:', parkingError);
-              return 'Sorry, there was an error checking the parking space. Please try again.';
-            }
-
-            if (!parkingData || parkingData.status !== "Open") {
-              setAwaitingParkingConfirmation(null);
-              return `Sorry, parking space ${awaitingParkingConfirmation} is no longer available. Please choose another parking space.`;
-            }
-
-            // Update parking space with guest end time
-            const { error: updateError } = await supabase
-              .from("parking_spaces")
-              .update({
-                status: "Reserved",
-                user: `${firstName} ${lastName}`,
-                updated_at: new Date().toISOString(),
-                parking_end_time: parkingRequest.parking_end_time
-              })
-              .eq("name", awaitingParkingConfirmation);
-
-            if (updateError) {
-              setAwaitingParkingConfirmation(null);
-              console.error('Error updating parking space:', updateError);
-              return 'Sorry, there was an error reserving the parking space. Please try again.';
-            }
-          } else {
-            // Regular user flow - just check parking space availability
+            // Check the current status of the parking space
+            const supabase = createClient();
             const { data: parkingData, error: fetchError } = await supabase
               .from("parking_spaces")
               .select("status")
-              .eq("name", awaitingParkingConfirmation)
+              .eq("name", parkingSpace)
               .single();
 
             if (fetchError) {
-              setAwaitingParkingConfirmation(null);
-              console.error('Error fetching parking space:', fetchError);
-              return 'Sorry, there was an error checking the parking space. Please try again.';
+              console.error("Error fetching parking space:", fetchError);
+              return "Sorry, there was an error checking the parking space. Please try again.";
             }
 
-            if (!parkingData || parkingData.status !== "Open") {
-              setAwaitingParkingConfirmation(null);
-              return `Sorry, parking space ${awaitingParkingConfirmation} is no longer available. Please choose another parking space.`;
+            if (!parkingData) {
+              return `Parking space ${parkingSpace} does not exist.`;
             }
 
-            const { error: updateError } = await supabase
+            if (parkingData.status !== "Open") {
+              return `Parking space ${parkingSpace} is already ${parkingData.status.toLowerCase()}. Please choose another parking space.`;
+            }
+
+            const { data: checkReserved, error: checkError } = await supabase
               .from("parking_spaces")
-              .update({
-                status: "Reserved",
-                user: `${firstName} ${lastName}`,
-                updated_at: new Date().toISOString()
-              })
-              .eq("name", awaitingParkingConfirmation);
+              .select("name")
+              .eq("user", `${firstName} ${lastName}`)
+              .eq("status", "Reserved")
+              .single();
 
-            if (updateError) {
-              setAwaitingParkingConfirmation(null);
-              console.error('Error updating parking space:', updateError);
-              return 'Sorry, there was an error reserving the parking space. Please try again.';
+            if (checkError) {
+              console.log(checkError);
             }
+            // First check if user already has a parking space
+            if (checkReserved) {
+              console.log("User already has a parking space:", checkReserved);
+              return `You already have a ${parkingStatus?.toLowerCase()} parking space (${userParkingSpace}). You cannot reserve another space until your current reservation is cancelled or completed.`;
+            }
+
+            setAwaitingParkingConfirmation(parkingSpace);
+            return `Are you sure you want to park in ${parkingSpace}?`;
           }
+        }
 
-          const confirmedParking = awaitingParkingConfirmation;
+        if (awaitingParkingConfirmation) {
+          const response = prompt.toLowerCase();
+          // Expanded acceptance of confirmation with typo tolerance
+          if (
+            response.includes("yes") ||
+            response.includes("yeah") ||
+            response.includes("sure") ||
+            response.includes("yep") ||
+            response.includes("correct") ||
+            response.includes("ok") ||
+            response.includes("okay")
+          ) {
+            const supabase = createClient();
+
+            // First check if user is a guest by querying user_roles
+            const { data: roleData, error: roleError } = await supabase
+              .from("user_roles")
+              .select("role")
+              .eq("user_id", userId)
+              .single();
+
+            if (roleError) {
+              setAwaitingParkingConfirmation(null);
+              console.error("Error checking user role:", roleError);
+              return "Sorry, there was an error verifying your account type. Please try again.";
+            }
+
+            // If user is a guest, get their latest parking request
+            if (roleData?.role === "Guest") {
+              const { data: parkingRequest, error: requestError } =
+                await supabase
+                  .from("guest_parking_request")
+                  .select("*")
+                  .eq("user_id", userId)
+                  .eq("status", "Approved")
+                  .order("created_at", { ascending: false })
+                  .limit(1)
+                  .single();
+
+              if (requestError) {
+                setAwaitingParkingConfirmation(null);
+                console.error("Error fetching parking request:", requestError);
+                return "Sorry, there was an error fetching your parking request. Please ensure you have an approved parking request.";
+              }
+
+              if (!parkingRequest) {
+                setAwaitingParkingConfirmation(null);
+                return "You need an approved parking request before you can park. Please submit a parking request first.";
+              }
+
+              // Check if trying to park outside of approved time window
+              const currentTime = new Date();
+              const parkingStartTime = new Date(
+                parkingRequest.parking_start_time
+              );
+              const parkingEndTime = new Date(parkingRequest.parking_end_time);
+
+              if (
+                currentTime < parkingStartTime ||
+                currentTime > parkingEndTime
+              ) {
+                setAwaitingParkingConfirmation(null);
+                return `You can only park during your approved time window: ${parkingRequest.parking_start_time} to ${parkingRequest.parking_end_time}`;
+              }
+
+              // If within time window, proceed with parking space status check
+              const { data: parkingData, error: parkingError } = await supabase
+                .from("parking_spaces")
+                .select("status")
+                .eq("name", awaitingParkingConfirmation)
+                .single();
+
+              if (parkingError) {
+                setAwaitingParkingConfirmation(null);
+                console.error("Error fetching parking space:", parkingError);
+                return "Sorry, there was an error checking the parking space. Please try again.";
+              }
+
+              if (!parkingData || parkingData.status !== "Open") {
+                setAwaitingParkingConfirmation(null);
+                return `Sorry, parking space ${awaitingParkingConfirmation} is no longer available. Please choose another parking space.`;
+              }
+
+              // Update parking space with guest end time
+              const { error: updateError } = await supabase
+                .from("parking_spaces")
+                .update({
+                  status: "Reserved",
+                  user: `${firstName} ${lastName}`,
+                  updated_at: new Date().toISOString(),
+                  parking_end_time: parkingRequest.parking_end_time,
+                })
+                .eq("name", awaitingParkingConfirmation);
+
+              if (updateError) {
+                setAwaitingParkingConfirmation(null);
+                console.error("Error updating parking space:", updateError);
+                return "Sorry, there was an error reserving the parking space. Please try again.";
+              }
+            } else {
+              // Regular user flow - just check parking space availability
+              const { data: parkingData, error: fetchError } = await supabase
+                .from("parking_spaces")
+                .select("status")
+                .eq("name", awaitingParkingConfirmation)
+                .single();
+
+              if (fetchError) {
+                setAwaitingParkingConfirmation(null);
+                console.error("Error fetching parking space:", fetchError);
+                return "Sorry, there was an error checking the parking space. Please try again.";
+              }
+
+              if (!parkingData || parkingData.status !== "Open") {
+                setAwaitingParkingConfirmation(null);
+                return `Sorry, parking space ${awaitingParkingConfirmation} is no longer available. Please choose another parking space.`;
+              }
+
+              const { error: updateError } = await supabase
+                .from("parking_spaces")
+                .update({
+                  status: "Reserved",
+                  user: `${firstName} ${lastName}`,
+                  updated_at: new Date().toISOString(),
+                })
+                .eq("name", awaitingParkingConfirmation);
+
+              if (updateError) {
+                setAwaitingParkingConfirmation(null);
+                console.error("Error updating parking space:", updateError);
+                return "Sorry, there was an error reserving the parking space. Please try again.";
+              }
+            }
+
+            const confirmedParking = awaitingParkingConfirmation;
+            setAwaitingParkingConfirmation(null);
+
+            ChatContextManager.updateContext({
+              selectedParking: confirmedParking,
+              lastParkingQuery: prompt,
+            });
+
+            setEntranceConfirmation(true);
+            return "Which entrance are you coming from? (Main Entrance or Side Entrance)?";
+          } else if (
+            response.includes("no") ||
+            response.includes("nope") ||
+            response.includes("cancel") ||
+            response.includes("dont") ||
+            response.includes("don't")
+          ) {
+            setAwaitingParkingConfirmation(null);
+            return "What would you like to do instead?";
+          }
+        }
+
+        // Check for entrance selection with typo tolerance
+        const entrance = detectEntrance(prompt);
+        if (entrance && context.selectedParking) {
+          ChatContextManager.updateContext({ entrance });
+          setEntranceConfirmation(false);
           setAwaitingParkingConfirmation(null);
-          
-          ChatContextManager.updateContext({
-            selectedParking: confirmedParking,
-            lastParkingQuery: prompt,
-          });
-          
-          setEntranceConfirmation(true);
-          return "Which entrance are you coming from? (Main Entrance or Side Entrance)?"; 
-        } else if (
-          response.includes('no') || 
-          response.includes('nope') || 
-          response.includes('cancel') || 
-          response.includes('dont') || 
-          response.includes("don't")
+          return `Here's the route to ${context.selectedParking} from ${entrance} Entrance`;
+        }
+
+        const response = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            prompt,
+            context: ChatContextManager.getContext(),
+            conversationHistory: conversationHistory,
+          }),
+        });
+
+        if (!response.ok) throw new Error("Failed to fetch response");
+
+        const { response: aiResponse } = await response.json();
+
+        // Handle direct route requests from AI responses
+        if (
+          isRouteRequest(prompt) &&
+          aiResponse.toLowerCase().includes("route")
         ) {
-          setAwaitingParkingConfirmation(null);
-          return "What would you like to do instead?";
+          const parkingSpace =
+            extractParkingSpace(aiResponse) || extractParkingSpace(prompt);
+          const entrance = detectEntrance(aiResponse) || detectEntrance(prompt);
+
+          if (parkingSpace && entrance) {
+            ChatContextManager.updateContext({
+              selectedParking: parkingSpace,
+              entrance: entrance,
+            });
+          }
         }
-      }
 
-      // Check for entrance selection with typo tolerance
-      const entrance = detectEntrance(prompt);
-      if (entrance && context.selectedParking) {
-        ChatContextManager.updateContext({ entrance });
-        return `Here's the route to ${context.selectedParking} from ${entrance} Entrance`;
-      }
+        // Check if this is a parking availability response
+        const isAvailabilityResponse =
+          aiResponse.toLowerCase().includes("available") &&
+          (aiResponse.toLowerCase().includes("parking") ||
+            aiResponse.toLowerCase().includes("space"));
 
-      const response = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          prompt,
-          context: ChatContextManager.getContext(),
-          conversationHistory: conversationHistory
-        }),
-      });
-
-      if (!response.ok) throw new Error("Failed to fetch response");
-
-      const { response: aiResponse } = await response.json();
-      
-      // Handle direct route requests from AI responses
-      if (isRouteRequest(prompt) && aiResponse.toLowerCase().includes('route')) {
-        const parkingSpace = extractParkingSpace(aiResponse) || extractParkingSpace(prompt);
-        const entrance = detectEntrance(aiResponse) || detectEntrance(prompt);
-        
-        if (parkingSpace && entrance) {
-          ChatContextManager.updateContext({
-            selectedParking: parkingSpace,
-            entrance: entrance
-          });
+        if (isAvailabilityResponse) {
+          const spaces = extractAvailableParkingSpaces(aiResponse);
+          if (spaces.length > 0) {
+            setAvailableParkingSpaces(spaces);
+          }
+        } else if (!awaitingParkingConfirmation) {
+          // Reset available spaces if not a parking response
+          setAvailableParkingSpaces([]);
         }
-      }
-      
-      // Check if this is a parking availability response
-      const isAvailabilityResponse = 
-        aiResponse.toLowerCase().includes("available") && 
-        (aiResponse.toLowerCase().includes("parking") || aiResponse.toLowerCase().includes("space"));
 
-      if (isAvailabilityResponse) {
-        const spaces = extractAvailableParkingSpaces(aiResponse);
-        if (spaces.length > 0) {
-          setAvailableParkingSpaces(spaces);
-        }
-      } else if (!awaitingParkingConfirmation) {
-        // Reset available spaces if not a parking response
-        setAvailableParkingSpaces([]);
+        return aiResponse;
+      } finally {
+        setIsGenerating(false);
       }
-
-      return aiResponse;
-    } finally {
-      setIsGenerating(false);
-    }
-  }, [conversationHistory, awaitingParkingConfirmation, userId, firstName, lastName, extractParkingSpace, detectEntrance, isRouteRequest]);
+    },
+    [
+      conversationHistory,
+      awaitingParkingConfirmation,
+      userId,
+      firstName,
+      lastName,
+      extractParkingSpace,
+      detectEntrance,
+      isRouteRequest,
+      isUserParked,
+      parkingStatus,
+      userParkingSpace,
+    ]
+  );
 
   const handleSubmit = useCallback(
     async (e?: { preventDefault?: () => void }) => {
@@ -604,15 +759,18 @@ export default function ChatPage() {
     []
   );
 
-  const handleCommandClick = useCallback((command: string) => {
-    const userMessage = createMessage(command);
-    setMessages((prev) => [...prev, userMessage]);
+  const handleCommandClick = useCallback(
+    (command: string) => {
+      const userMessage = createMessage(command);
+      setMessages((prev) => [...prev, userMessage]);
 
-    handleMessage(command).then(aiResponse => {
-      const aiMessage = createMessage(aiResponse, true);
-      setMessages((prev) => [...prev, aiMessage]);
-    });
-  }, [createMessage, handleMessage]);
+      handleMessage(command).then((aiResponse) => {
+        const aiMessage = createMessage(aiResponse, true);
+        setMessages((prev) => [...prev, aiMessage]);
+      });
+    },
+    [createMessage, handleMessage]
+  );
 
   return (
     <div className="flex h-[calc(90vh-60px)] w-full">
@@ -629,6 +787,9 @@ export default function ChatPage() {
         availableParkingSpaces={availableParkingSpaces}
         awaitingConfirmation={awaitingParkingConfirmation}
         entranceConfirmation={entranceConfirmation}
+        isUserParked={isUserParked}
+        userParkingSpace={userParkingSpace}
+        parkingStatus={parkingStatus}
       />
     </div>
   );
@@ -639,12 +800,15 @@ const extractAvailableParkingSpaces = (text: string): string[] => {
   const parkingSpaces: string[] = [];
   const regex = /P\d+/g;
   const matches = text.match(regex);
-  
+
   if (matches) {
     const uniqueSpaces = [...new Set(matches)];
     return uniqueSpaces.filter((space: string) => {
-      const contextBefore = text.substring(Math.max(0, text.indexOf(space) - 50), text.indexOf(space));
-      const isAvailable = 
+      const contextBefore = text.substring(
+        Math.max(0, text.indexOf(space) - 50),
+        text.indexOf(space)
+      );
+      const isAvailable =
         !contextBefore.toLowerCase().includes("not available") &&
         !contextBefore.toLowerCase().includes("unavailable") &&
         !contextBefore.toLowerCase().includes("reserved") &&
