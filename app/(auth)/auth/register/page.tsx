@@ -45,7 +45,7 @@ export default function RegisterPage() {
               <div className="absolute bottom-6 left-6 z-10 max-w-[75%] text-white">
                 <h2 className="text-xl font-bold mb-1">HAU2PARK</h2>
                 <p className="text-sm">
-                  The smart parking management solution for Holy Angel University
+                The AI assisted parking management solution for Holy Angel University
                 </p>
               </div>
             </div>

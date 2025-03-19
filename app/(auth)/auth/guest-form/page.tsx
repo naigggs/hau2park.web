@@ -64,7 +64,7 @@ function GuestFormContent() {
           <div className="absolute bottom-10 left-10 z-20 max-w-md">
             <h2 className="text-white text-3xl font-bold mb-2">HAU2PARK</h2>
             <p className="text-gray-200 text-sm">
-              The smart parking management solution for Holy Angel University
+              The AI assisted parking management solution for Holy Angel University
             </p>
           </div>
         </div>
