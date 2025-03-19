@@ -280,7 +280,68 @@ export const approveAccount = async (id: number, user_id: string) => {
       return { error: signupError.message };
     }
 
-    // Create user in Auth
+    // STEP 1: Check if the email already exists in user_info table
+    const { data: existingUserInfo, error: userCheckError } = await supabase
+      .from("user_info")
+      .select("user_id")
+      .eq("email", signupData.email)
+      .maybeSingle();
+    
+    if (userCheckError) {
+      console.error("Error checking for existing user:", userCheckError);
+    }
+    
+    // STEP 2: Check if email exists in Auth system
+    const { data, error: listError } = await supabaseAdminClient.auth.admin.listUsers();
+    
+    let existingAuthUser = null;
+    if (!listError && data) {
+      existingAuthUser = data.users.find(u => 
+        u.email && u.email.toLowerCase() === signupData.email.toLowerCase()
+      );
+    }
+    
+    // STEP 3: If user exists in either place, clean it up
+    if (existingUserInfo?.user_id || existingAuthUser) {
+      console.log(`Found existing user with email ${signupData.email}. Cleaning up before creating new user.`);
+      
+      const userId = existingUserInfo?.user_id || existingAuthUser?.id;
+      
+      if (userId) {
+        // Delete from user_info table if exists
+        const { error: deleteUserError } = await supabase
+          .from("user_info")
+          .delete()
+          .eq("user_id", userId);
+          
+        if (deleteUserError) {
+          console.log("Error deleting user_info (might not exist):", deleteUserError);
+        }
+        
+        // Delete from user_roles table if exists
+        const { error: deleteRoleError } = await supabase
+          .from("user_roles")
+          .delete()
+          .eq("user_id", userId);
+          
+        if (deleteRoleError) {
+          console.log("Error deleting user_roles (might not exist):", deleteRoleError);
+        }
+        
+        // Delete from Auth if exists
+        if (existingAuthUser) {
+          const { error: deleteAuthError } = await supabaseAdminClient.auth.admin.deleteUser(userId);
+          
+          if (deleteAuthError) {
+            console.error("Error deleting user from Auth:", deleteAuthError);
+            return { error: `Failed to delete existing user: ${deleteAuthError.message}` };
+          }
+        }
+      }
+    }
+
+    // STEP 4: Now create the new user in Auth
+    console.log(`Creating new user with email ${signupData.email}`);
     const { data: authData, error: authError } = await supabaseAdminClient.auth.admin.createUser({
       email: signupData.email,
       password: signupData.password,
@@ -295,7 +356,7 @@ export const approveAccount = async (id: number, user_id: string) => {
     const userId = authData.user.id;
 
     // Create user info
-    const { error: userError } = await supabase.from("user_info").insert({
+    const { error: userInfoError } = await supabase.from("user_info").insert({
       user_id: userId,
       email: signupData.email,
       first_name: signupData.first_name,
@@ -304,9 +365,9 @@ export const approveAccount = async (id: number, user_id: string) => {
       phone: signupData.phone
     });
 
-    if (userError) {
-      console.error("Error creating user info:", userError);
-      return { error: userError.message };
+    if (userInfoError) {
+      console.error("Error creating user info:", userInfoError);
+      return { error: userInfoError.message };
     }
 
     // Set user role

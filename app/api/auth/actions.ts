@@ -99,10 +99,16 @@ export async function registerUser(formData: FormData) {
   const lastName = formData.get("lastName") as string;
   const vehiclePlateNumber = formData.get("vehicle_plate_number") as string;
   const phone = formData.get("phone") as string;
+  
+  // Get pre-uploaded document URL from the form if it exists
+  const documentUrl = formData.get("documentUrl") as string;
   const document1 = formData.get("document1") as File;
 
-  // First, insert into account_sign_up table
-  const { error: signupError } = await supabase
+  // First, check if we have a pre-uploaded document URL
+  const hasPreuploadedDocument = documentUrl && documentUrl.length > 0;
+  
+  // Insert into account_sign_up table with the document URL if it exists
+  const { data: signupData, error: signupError } = await supabase
     .from("account_sign_up")
     .insert({
       email: email,
@@ -111,16 +117,17 @@ export async function registerUser(formData: FormData) {
       last_name: lastName,
       vehicle_plate_number: vehiclePlateNumber,
       phone: phone,
-      id_link: null 
-    });
+      id_link: hasPreuploadedDocument ? documentUrl : null // Use pre-uploaded URL if available
+    })
+    .select();
 
   if (signupError) {
     console.log("Error signing up", signupError);
     throw new Error(signupError.message);
   }
 
-  // Handle document upload if provided
-  if (document1) {
+  // If we don't have a pre-uploaded document URL but we have a file, upload it now
+  if (!hasPreuploadedDocument && document1 && document1.size > 0) {
     try {
       const fileExt = document1.name.split(".").pop();
       const fileName = `${email}-id.${fileExt}`;
@@ -134,17 +141,21 @@ export async function registerUser(formData: FormData) {
       } else {
         // Only update if upload succeeded
         const { data: { publicUrl } } = supabase.storage
-          .from("hau2park") // Use the same bucket for consistency
+          .from("hau2park")
           .getPublicUrl(fileName);
 
-        await supabase
-          .from("account_sign_up")
-          .update({ id_link: publicUrl })
-          .eq("email", email);
+        // Get the newly created record's ID
+        const signupId = signupData?.[0]?.id;
+        
+        if (signupId) {
+          await supabase
+            .from("account_sign_up")
+            .update({ id_link: publicUrl })
+            .eq("id", signupId);
+        }
       }
     } catch (docError) {
       console.error("Document upload error:", docError);
-      // Continue with registration even if document upload fails
     }
   }
 

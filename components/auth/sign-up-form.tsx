@@ -7,10 +7,12 @@ import { Label } from "@/components/ui/label";
 import { useState, useEffect, useRef, Suspense } from "react";
 import { registerUser } from "@/app/api/auth/actions";
 import { Progress } from "@/components/ui/progress";
-import { Check, X, Upload, Eye, EyeOff } from "lucide-react";
+import { Check, X, Upload, Eye, EyeOff, AlertCircle, Loader2, FileImage } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Spinner } from "@/components/shared/loading/spinner";
 import { useRouter } from "next/navigation";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { createClient } from "@/utils/supabase/client";
 
 export function SignUpForm({
   className,
@@ -18,6 +20,7 @@ export function SignUpForm({
 }: React.ComponentPropsWithoutRef<"form">) {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const supabase = createClient();
   
   // Multi-step form control
   const totalSteps = 3;
@@ -33,14 +36,21 @@ export function SignUpForm({
   const [vehicleLetters, setVehicleLetters] = useState("");
   const [vehicleNumbers, setVehicleNumbers] = useState("");
   const [phone, setPhone] = useState("");
+  
+  // File handling states
   const [fileName, setFileName] = useState("");
   const [fileError, setFileError] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [fileRequired, setFileRequired] = useState(true);
+  const [fileUploading, setFileUploading] = useState(false);
+  const [fileUploadProgress, setFileUploadProgress] = useState(0);
+  const [fileUploadSuccess, setFileUploadSuccess] = useState(false);
+  const [fileUploadUrl, setFileUploadUrl] = useState<string | null>(null);
+  const [filePreview, setFilePreview] = useState<string | null>(null);
   
   // UI state
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
   
   // Validation states
   const [firstNameError, setFirstNameError] = useState<string | null>(null);
@@ -58,6 +68,11 @@ export function SignUpForm({
   const [hasSymbol, setHasSymbol] = useState(false);
 
   const { toast } = useToast();
+
+  // Reset error state when changing steps
+  useEffect(() => {
+    setFormError(null);
+  }, [step]);
 
   // Check password strength
   useEffect(() => {
@@ -165,7 +180,7 @@ export function SignUpForm({
     
     setPhone(limitedDigits);
   };
-
+  
   const validateFileSize = (file: File) => {
     // 10MB in bytes
     const maxSize = 10 * 1024 * 1024;
@@ -179,29 +194,122 @@ export function SignUpForm({
     return true;
   };
 
+  // Generate file preview
+  const generateFilePreview = (file: File) => {
+    if (file.type === 'application/pdf') {
+      // For PDFs, just show icon
+      setFilePreview(null);
+      return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      if (e.target?.result) {
+        setFilePreview(e.target.result as string);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Upload file immediately upon selection
+  const uploadFile = async (file: File) => {
+    if (!email) {
+      setFileError("Please fill out your email first before uploading a document");
+      return false;
+    }
+    
+    setFileUploading(true);
+    setFileUploadProgress(0);
+    
+    try {
+      const fileExt = file.name.split('.').pop() || '';
+      const fileName = `${email.replace('@', '_at_')}-id.${fileExt}`;
+      
+      // Use mock upload progress simulation
+      const uploadProgressInterval = setInterval(() => {
+        setFileUploadProgress(prev => {
+          const newProgress = prev + Math.random() * 10;
+          return newProgress >= 95 ? 95 : newProgress;
+        });
+      }, 200);
+      
+      // Actually upload the file
+      const { error: uploadError } = await supabase.storage
+        .from('hau2park')
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: true
+        });
+      
+      clearInterval(uploadProgressInterval);
+      
+      if (uploadError) {
+        console.error("Error uploading document:", uploadError);
+        setFileError(`Upload failed: ${uploadError.message}`);
+        setFileUploading(false);
+        setFileUploadProgress(0);
+        return false;
+      }
+      
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('hau2park')
+        .getPublicUrl(fileName);
+      
+      setFileUploadUrl(publicUrl);
+      setFileUploadProgress(100);
+      setFileUploadSuccess(true);
+      
+      setTimeout(() => {
+        setFileUploading(false);
+      }, 1000);
+      
+      toast({
+        title: "Document uploaded",
+        description: "Your document was successfully uploaded",
+      });
+      
+      return true;
+    } catch (error) {
+      console.error("File upload error:", error);
+      setFileError(`Upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      setFileUploading(false);
+      setFileUploadProgress(0);
+      return false;
+    }
+  };
+
   // Handle file selection
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFileError(null);
+    setFileUploadSuccess(false);
+    setFileUploadUrl(null);
+    setFilePreview(null);
+    
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0];
-      const isValid = validateFileSize(file);
       
-      if (isValid) {
-        setFileName(file.name);
-        setSelectedFile(file);
-        setFileRequired(false); // File is selected, no longer required
-      } else {
-        // Reset the file input element
-        if (fileInputRef.current) {
-          fileInputRef.current.value = '';
-        }
-        setFileName("");
-        setSelectedFile(null);
-        setFileRequired(true);
+      // Validate file type
+      if (!validateFileType(file)) {
+        if (fileInputRef.current) fileInputRef.current.value = '';
+        return;
       }
+      
+      // Validate file size
+      if (!validateFileSize(file)) {
+        if (fileInputRef.current) fileInputRef.current.value = '';
+        return;
+      }
+      
+      setFileName(file.name);
+      setSelectedFile(file);
+      generateFilePreview(file);
+      
+      // Upload file immediately
+      await uploadFile(file);
     } else {
       setFileName("");
       setSelectedFile(null);
-      setFileRequired(true);
     }
   };
 
@@ -240,19 +348,19 @@ export function SignUpForm({
       return;
     }
     
+    // Clear previous errors
+    setFormError(null);
+    
     // Final validation before submission
     const isPhoneValid = validatePhone(phone);
     
-    // Validate file selection
-    let isFileValid = true;
-    if (!selectedFile) {
+    // Check if file was uploaded successfully
+    if (!fileUploadSuccess || !fileUploadUrl) {
       setFileError("Please upload an ID document");
-      isFileValid = false;
-    } else if (selectedFile) {
-      isFileValid = validateFileSize(selectedFile);
+      return;
     }
     
-    if (!(isPhoneValid && isFileValid)) {
+    if (!isPhoneValid) {
       return;
     }
     
@@ -268,10 +376,14 @@ export function SignUpForm({
     formData.append('vehicle_plate_number', `${vehicleLetters} ${vehicleNumbers}`);
     formData.append('phone', `+63${phone}`);
     
-    // Add the file if we have one
-    if (selectedFile) {
-      formData.append('document1', selectedFile);
-    }
+    // Add the pre-uploaded document URL
+    formData.append('documentUrl', fileUploadUrl);
+    
+    // We don't need to include the actual file since it's already uploaded
+    // but including as backup if server needs to handle legacy code paths
+    // if (selectedFile) {
+    //   formData.append('document1', selectedFile);
+    // }
   
     try {
       const result = await registerUser(formData);
@@ -279,31 +391,35 @@ export function SignUpForm({
       // Use localStorage instead of sessionStorage
       localStorage.setItem('registrationSuccess', 'true');
       
-      // IMPORTANT: Return early to prevent any redirect errors from being caught
       setLoading(false);
+      
+      toast({
+        title: "Registration successful",
+        description: "Your account has been created and is pending approval.",
+      });
       
       // Use a separate direct navigation with setTimeout to ensure storage is set
       setTimeout(() => {
         window.location.href = '/auth/login?registered=true';
-      }, 100);
-      
-      return; // Exit early before any redirect errors can occur
+      }, 1000);
       
     } catch (error) {
       console.error("Error registering user:", error);
+      
+      setLoading(false);
+      setFormError(error instanceof Error ? error.message : "There was an error creating your account. Please try again.");
       
       toast({
         variant: "destructive",
         title: "Registration failed",
         description: error instanceof Error ? error.message : "There was an error creating your account.",
       });
-    } finally {
-      setLoading(false);
     }
   };
 
   // Custom file upload button click handler
   const handleUploadClick = () => {
+    if (fileUploading) return; // Don't allow clicking when uploading
     fileInputRef.current?.click();
   };
 
@@ -319,6 +435,14 @@ export function SignUpForm({
           Fill in your details below to create your account
         </p>
       </div>
+
+      {/* Form Error Alert */}
+      {formError && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{formError}</AlertDescription>
+        </Alert>
+      )}
 
       {/* Progress Indicator */}
       <div className="w-full">
@@ -525,7 +649,7 @@ export function SignUpForm({
                     required
                     placeholder="9123456789"
                     className="pl-14"
-                    value={phone}
+                    value={phone || ""}
                     onChange={(e) => formatPhoneNumber(e.target.value)}
                     maxLength={10}
                   />
@@ -536,15 +660,16 @@ export function SignUpForm({
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="document1">Upload ID <span className="text-xs text-muted-foreground">(Max: 1MB)</span></Label>
+              <Label htmlFor="document1">Upload ID <span className="text-xs text-muted-foreground">(Max: 10MB)</span></Label>
               <div 
                 className={cn(
-                  "border-2 border-dashed rounded-md border-gray-300 p-6 flex flex-col items-center justify-center cursor-pointer hover:border-primary transition-colors",
-                  fileError && "border-red-500"
+                  "relative border-2 border-dashed rounded-md border-gray-300 p-6 flex flex-col items-center justify-center cursor-pointer hover:border-primary transition-colors",
+                  fileError ? "border-red-500" : fileUploadSuccess ? "border-green-500" : "",
+                  fileUploading ? "cursor-not-allowed" : "cursor-pointer"
                 )}
                 onClick={handleUploadClick}
               >
-                {/* Hidden file input that's not required to avoid the focus error */}
+                {/* Hidden file input */}
                 <input 
                   ref={fileInputRef}
                   id="document1" 
@@ -553,15 +678,66 @@ export function SignUpForm({
                   className="hidden"
                   accept="image/png,image/jpeg,application/pdf"
                   onChange={handleFileChange}
+                  disabled={fileUploading}
                 />
-                <div className="flex flex-col items-center gap-2 w-full">
-                  <Upload className={cn("h-8 w-8", fileError ? "text-red-500" : "text-muted-foreground")} />
-                  {fileName ? (
-                    <p className="text-sm">{fileName}</p>
+                
+                <div className="flex flex-col items-center gap-3 w-full">
+                  {fileUploading ? (
+                    <>
+                      <div className="w-full max-w-[200px] mb-2">
+                        <Progress value={fileUploadProgress} className="h-2" />
+                        <p className="text-xs text-center mt-1">
+                          {Math.round(fileUploadProgress)}% uploaded
+                        </p>
+                      </div>
+                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    </>
+                  ) : fileUploadSuccess ? (
+                    <div className="flex flex-col items-center">
+                      <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center mb-2">
+                        <Check className="h-6 w-6 text-green-600" />
+                      </div>
+                      {filePreview ? (
+                        <div className="w-full max-w-[200px] h-[100px] rounded-md overflow-hidden border mb-2">
+                          <img
+                            src={filePreview}
+                            alt="ID preview" 
+                            className="w-full h-full object-contain"
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-full max-w-[200px] h-[100px] rounded-md overflow-hidden border bg-muted/20 flex items-center justify-center mb-2">
+                          <FileImage className="h-10 w-10 text-muted-foreground" />
+                        </div>
+                      )}
+                      <p className="text-sm font-medium">Document uploaded!</p>
+                      <p className="text-xs text-muted-foreground truncate max-w-[200px] mt-1">
+                        {fileName}
+                      </p>
+                      <Button 
+                        type="button" 
+                        variant="ghost" 
+                        size="sm" 
+                        className="text-xs mt-2"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleUploadClick();
+                        }}
+                      >
+                        Replace file
+                      </Button>
+                    </div>
                   ) : (
                     <>
-                      <p className="font-medium">Click to upload</p>
-                      <p className="text-xs text-muted-foreground">PNG, JPG or PDF (max. 1MB)</p>
+                      <Upload className={cn("h-8 w-8", fileError ? "text-red-500" : "text-muted-foreground")} />
+                      {fileName ? (
+                        <p className="text-sm truncate max-w-full">{fileName}</p>
+                      ) : (
+                        <>
+                          <p className="font-medium">Click to upload</p>
+                          <p className="text-xs text-muted-foreground">PNG, JPG or PDF (max. 10MB)</p>
+                        </>
+                      )}
                     </>
                   )}
                 </div>
@@ -577,7 +753,7 @@ export function SignUpForm({
               type="button"
               variant="outline"
               onClick={goToPreviousStep}
-              disabled={loading}
+              disabled={loading || fileUploading}
             >
               Back
             </Button>
@@ -585,12 +761,17 @@ export function SignUpForm({
           <Button 
             type="submit" 
             className={step === 1 ? "w-full" : "ml-auto"} 
-            disabled={loading}
+            disabled={loading || fileUploading}
           >
             {loading ? (
               <span className="flex items-center justify-center gap-2">
                 <Spinner size="sm" className="text-white" />
                 {step === totalSteps ? "Registering..." : "Processing..."}
+              </span>
+            ) : fileUploading && step === totalSteps ? (
+              <span className="flex items-center justify-center gap-2">
+                <Spinner size="sm" className="text-white" />
+                Uploading document...
               </span>
             ) : (
               step === totalSteps ? "Register" : "Next"
