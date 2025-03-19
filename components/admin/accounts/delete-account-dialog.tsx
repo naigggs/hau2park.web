@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -46,29 +46,6 @@ export default function DeleteAccountDialog({
   // Determine if component is controlled or uncontrolled
   const isControlled = controlledOpen !== undefined;
   const open = isControlled ? controlledOpen : internalOpen;
-  
-  // Setup effect to handle external trigger clicks via IDs
-  useEffect(() => {
-    // Create a handler for the trigger element with this ID
-    const triggerHandler = (e: MouseEvent) => {
-      setInternalOpen(true);
-    };
-    
-    // Get the trigger element
-    const triggerElement = document.getElementById(`delete-trigger-${id}`);
-    
-    // Add click listener if element exists
-    if (triggerElement) {
-      triggerElement.addEventListener('click', triggerHandler);
-    }
-    
-    // Clean up
-    return () => {
-      if (triggerElement) {
-        triggerElement.removeEventListener('click', triggerHandler);
-      }
-    };
-  }, [id]);
   
   // Handle state changes
   const handleOpenChange = (newOpen: boolean) => {
@@ -121,22 +98,9 @@ export default function DeleteAccountDialog({
     </div>
   );
 
-  // Create visible but hidden elements to accept programmatic clicks
-  const hiddenTrigger = (
-    <span
-      id={`delete-trigger-${id}`}
-      className="hidden"
-      role="button"
-      tabIndex={-1}
-      aria-hidden="true"
-    />
-  );
-
   if (isMobile) {
     return (
       <>
-        {hiddenTrigger}
-        
         {!isControlled && (
           <Button 
             variant="ghost" 
@@ -189,8 +153,6 @@ export default function DeleteAccountDialog({
 
   return (
     <>
-      {hiddenTrigger}
-      
       <Dialog open={open} onOpenChange={handleOpenChange}>
         {!isControlled && (
           <DialogTrigger asChild>
