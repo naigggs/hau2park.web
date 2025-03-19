@@ -9,6 +9,8 @@ import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { Spinner } from "@/components/shared/loading/spinner";
+import { Eye, EyeOff, AlertCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export function LoginForm({
   className,
@@ -19,6 +21,8 @@ export function LoginForm({
   const [loading, setLoading] = useState(false);
   const [emailError, setEmailError] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
 
   function validateForm(email: string, password: string): boolean {
     let isValid = true;
@@ -26,6 +30,7 @@ export function LoginForm({
     // Reset error states
     setEmailError(null);
     setPasswordError(null);
+    setLoginError(null);
 
     // Validate email (contains @ and .com, .net, etc.)
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -56,19 +61,48 @@ export function LoginForm({
     }
     
     setLoading(true);
+    setLoginError(null);
     
     try {
-      await Login(formData);
+      const response = await Login(formData);
+      
+      // Check for specific response properties that might indicate approval status
+      // Note: You'll need to modify your Login function to return these status codes or messages
       toast({
         title: "Login Success!",
         description: "You have successfully logged in.",
         className: "bg-green-500 text-white",
       });
-    } catch (error) {
+      
+      // Redirect to dashboard or home page after successful login
+      router.push("/dashboard");
+      
+    } catch (error: any) {
+      // Handle specific error cases based on error message or code
+      let errorMessage = "Invalid email or password. Please try again.";
+      
+      if (error?.message) {
+        if (error.message.includes("not approved") || 
+            error.message.includes("pending approval") || 
+            error.message.includes("awaiting approval")) {
+          errorMessage = "Your account exists but is pending admin approval.";
+          setLoginError(errorMessage);
+        } else if (error.message.includes("not found") || 
+                  error.message.includes("incorrect password")) {
+          errorMessage = "Invalid email or password. Please try again.";
+          setLoginError(errorMessage);
+        } else {
+          // For other errors, use the actual error message
+          errorMessage = error.message;
+          setLoginError(errorMessage);
+        }
+      }
+      
+      // Display toast for all error types
       toast({
         variant: "destructive",
         title: "Login failed",
-        description: error instanceof Error ? error.message : "Invalid email or password. Please try again.",
+        description: errorMessage,
       });
     } finally {
       setLoading(false);
@@ -87,6 +121,14 @@ export function LoginForm({
           Enter your email below to login to your account
         </p>
       </div>
+      
+      {loginError && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{loginError}</AlertDescription>
+        </Alert>
+      )}
+      
       <div className="grid gap-6">
         <div className="grid gap-2">
           <Label htmlFor="email">Email</Label>
@@ -113,15 +155,31 @@ export function LoginForm({
               Forgot password?
             </a>
           </div>
-          <Input 
-            id="password" 
-            name="password" 
-            type="password" 
-            required
-            minLength={6}
-            onChange={() => setPasswordError(null)}
-            className={passwordError ? "border-red-500" : ""}
-          />
+          <div className="relative">
+            <Input 
+              id="password" 
+              name="password" 
+              type={showPassword ? "text" : "password"} 
+              required
+              minLength={6}
+              onChange={() => setPasswordError(null)}
+              className={cn(
+                passwordError ? "border-red-500" : "",
+                "pr-10" // Add padding on the right to accommodate the icon
+              )}
+            />
+            <button
+              type="button"
+              className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? (
+                <EyeOff className="h-5 w-5" />
+              ) : (
+                <Eye className="h-5 w-5" />
+              )}
+            </button>
+          </div>
           {passwordError && (
             <p className="text-xs text-red-500">{passwordError}</p>
           )}

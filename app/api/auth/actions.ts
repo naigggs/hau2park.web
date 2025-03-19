@@ -7,14 +7,31 @@ import { createClient } from "@/utils/supabase/server";
 
 export async function Login(formData: FormData) {
   const supabase = await createClient();
-  const data = {
-    email: formData.get("email") as string,
-    password: formData.get("password") as string,
-  };
+  const email = formData.get("email") as string;
+  const password = formData.get("password") as string;
 
-  const { data: authData, error } = await supabase.auth.signInWithPassword(data);
+  // First, check if the email exists in the account_sign_up table (pending approval)
+  const { data: pendingAccount, error: pendingError } = await supabase
+    .from("account_sign_up")
+    .select("*")
+    .eq("email", email)
+    .single();
+
+  if (!pendingError && pendingAccount) {
+    // Account exists but is pending approval
+    throw new Error("Your account is pending administrator approval. Please check back later.");
+  }
+
+  // If not in pending accounts, proceed with normal login
+  const { data: authData, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
 
   if (error) {
+    if (error.message === "Invalid login credentials") {
+      throw new Error("Invalid email or password. Please try again.");
+    }
     throw new Error(error.message);
   }
 
@@ -103,6 +120,24 @@ export async function registerUser(formData: FormData) {
   // Get pre-uploaded document URL from the form if it exists
   const documentUrl = formData.get("documentUrl") as string;
   const document1 = formData.get("document1") as File;
+
+  // First, check if the email already exists in account_sign_up
+  const { data: existingSignup } = await supabase
+    .from("account_sign_up")
+    .select("*")
+    .eq("email", email)
+    .single();
+    
+  if (existingSignup) {
+    throw new Error("An account with this email is already pending approval.");
+  }
+  
+  // Then check if email exists in auth system
+  const { data: authUser } = await supabase.auth.admin.getUserById(email);
+  
+  if (authUser?.user) {
+    throw new Error("An account with this email already exists.");
+  }
 
   // First, check if we have a pre-uploaded document URL
   const hasPreuploadedDocument = documentUrl && documentUrl.length > 0;
