@@ -40,7 +40,7 @@ export default function GuestsPage() {
         {/* Mobile View: Tabs */}
         {isMobile ? (
           <Tabs defaultValue="pending" value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
-            <TabsList className="grid w-full grid-cols-2 shadow-sm">
+            <TabsList className="grid w-full grid-cols-2 shadow-sm -mt-4 pb-12 ">
               <TabsTrigger value="pending" className="flex items-center gap-2 py-2.5">
                 <UserPlus className="h-4 w-4" />
                 <span>Pending</span>
