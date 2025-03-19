@@ -180,20 +180,7 @@ export function SignUpForm({
     
     setPhone(limitedDigits);
   };
-
-  // Validate file type
-  const validateFileType = (file: File) => {
-    const allowedTypes = ['image/jpeg', 'image/png', 'application/pdf'];
-    
-    if (!allowedTypes.includes(file.type)) {
-      setFileError(`File must be PNG, JPG, or PDF. Selected file type: ${file.type}`);
-      return false;
-    }
-    
-    return true;
-  };
-
-  // Validate file size
+  
   const validateFileSize = (file: File) => {
     // 10MB in bytes
     const maxSize = 10 * 1024 * 1024;
