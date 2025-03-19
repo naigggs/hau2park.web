@@ -17,7 +17,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Auth Pages",
+  title: {
+    template: "HAU2PARK | %s",
+    default: "HAU2PARK | Auth"
+  },
+  description: "HAU2PARK Auth",
 };
 
 export default function AuthLayout({

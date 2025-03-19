@@ -23,7 +23,11 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "Staff Dashboard",
+  title: {
+    template: "HAU2PARK | %s",
+    default: "HAU2PARK | Staff"
+  },
+  description: "HAU2PARK Staff",
 };
 
 export default async function StaffLayout({

@@ -66,21 +66,43 @@ export default function GuestDashboard() {
   
   const isMobile = useMediaQuery("(max-width: 768px)");
   
-  // Get current time for greeting and status checks
-  const now = new Date();
-  const hours = now.getHours();
-  let greeting;
-  if (hours < 12) {
-    greeting = "Good Morning";
-  } else if (hours < 18) {
-    greeting = "Good Afternoon";
-  } else {
-    greeting = "Good Evening";
-  }
-
-  // Format current date and time - more subtle formatting
-  const currentDate = format(now, "EEE, MMM d");
-  const currentTime = format(now, "h:mm a");
+  // State for time-related values to prevent hydration errors
+  const [now, setNow] = useState<Date | null>(null);
+  const [greeting, setGreeting] = useState("");
+  const [currentDate, setCurrentDate] = useState("");
+  const [currentTime, setCurrentTime] = useState("");
+  
+  // State for derived calculations
+  const [parkingStatus, setParkingStatus] = useState("not-parked");
+  const [parkingStartTime, setParkingStartTime] = useState("N/A");
+  const [parkingEndTime, setParkingEndTime] = useState("N/A");
+  
+  // Update the time-based values client-side
+  useEffect(() => {
+    const date = new Date();
+    setNow(date);
+    
+    const hours = date.getHours();
+    if (hours < 12) {
+      setGreeting("Good Morning");
+    } else if (hours < 18) {
+      setGreeting("Good Afternoon");
+    } else {
+      setGreeting("Good Evening");
+    }
+    
+    setCurrentDate(format(date, "EEE, MMM d"));
+    setCurrentTime(format(date, "h:mm a"));
+    
+    // Update time every minute
+    const intervalId = setInterval(() => {
+      const newDate = new Date();
+      setNow(newDate);
+      setCurrentTime(format(newDate, "h:mm a"));
+    }, 60000);
+    
+    return () => clearInterval(intervalId);
+  }, []);
   
   // Get user ID from user info
   const userId = user?.user_id;
@@ -137,7 +159,7 @@ export default function GuestDashboard() {
     });
   }, [guestQRList, userId]);
   
-  // Format parking time
+  // Format parking time - moved to useEffect to avoid hydration issues
   const formatParkingTime = (timeString?: string | null): string => {
     if (!timeString) return 'N/A';
     
@@ -149,13 +171,20 @@ export default function GuestDashboard() {
     }
   };
   
-  // Get parking end time directly from latest approved request
-  const parkingEndTime = formatParkingTime(latestApprovedRequest?.parking_end_time);
-  const parkingStartTime = formatParkingTime(latestApprovedRequest?.parking_start_time);
+  // Process parking times when latestApprovedRequest changes
+  useEffect(() => {
+    if (latestApprovedRequest) {
+      setParkingStartTime(formatParkingTime(latestApprovedRequest.parking_start_time));
+      setParkingEndTime(formatParkingTime(latestApprovedRequest.parking_end_time));
+    } else {
+      setParkingStartTime("N/A");
+      setParkingEndTime("N/A");
+    }
+  }, [latestApprovedRequest]);
   
   // Improved check for parking expiration - considers both date and time components
   const isParkingExpired = () => {
-    if (!latestApprovedRequest || !assignedSpace) return false;
+    if (!latestApprovedRequest || !assignedSpace || !now) return false;
     
     try {
       // Get current date/time components
@@ -195,7 +224,7 @@ export default function GuestDashboard() {
   
   // Calculate remaining time for parking
   const getRemainingTime = () => {
-    if (!latestApprovedRequest || !assignedSpace) return null;
+    if (!latestApprovedRequest || !assignedSpace || !now) return null;
     
     try {
       // Parse appointment date and end time
@@ -223,16 +252,22 @@ export default function GuestDashboard() {
     }
   };
   
-  // Updated parking status logic - now with improved date checking
-  const parkingStatus = React.useMemo(() => {
-    if (!assignedSpace) return "not-parked";
+  // Update parking status when dependencies change
+  useEffect(() => {
+    if (!now) return;
     
-    if (isParkingExpired()) {
-      return "illegal-parking";
+    if (!assignedSpace) {
+      setParkingStatus("not-parked");
+      return;
     }
     
-    return assignedSpace.verified_by_user ? "parked" : "looking";
-  }, [assignedSpace, isParkingExpired]);
+    if (isParkingExpired()) {
+      setParkingStatus("illegal-parking");
+      return;
+    }
+    
+    setParkingStatus(assignedSpace.verified_by_user ? "parked" : "looking");
+  }, [assignedSpace, now, latestApprovedRequest]);
 
   // Download QR code function
   const downloadQRCode = () => {
@@ -292,7 +327,7 @@ export default function GuestDashboard() {
     });
   };
 
-  const isLoading = userLoading || requestsLoading || qrLoading || spacesLoading;
+  const isLoading = userLoading || requestsLoading || qrLoading || spacesLoading || !now;
 
   return (
     <div className="container mx-auto px-4 py-6 min-h-screen bg-white/80 dark:bg-slate-900">
@@ -467,7 +502,7 @@ export default function GuestDashboard() {
                                 Your parking time has expired. Please return to your vehicle immediately.
                               </span>
                             </div>
-                          ) : !isParkingExpired() && parkingStatus !== 'not-parked' && (
+                          ) : !isParkingExpired() && parkingStatus !== 'not-parked' && now && (
                             <div className="mt-2">
                               <div className="flex items-center justify-between mb-1">
                                 <span className="text-xs font-medium">Parking Time Remaining</span>
@@ -633,10 +668,11 @@ export default function GuestDashboard() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">
                         <h3 className="text-sm font-medium text-muted-foreground mb-1">Appointment Date</h3>
-                        <p className="font-medium flex items-center">
+                        {/* Changed from <p> to <div> to fix hydration error */}
+                        <div className="font-medium flex items-center">
                           <Calendar className="mr-1.5 h-4 w-4 text-orange-500" />
-                          {format(new Date(latestApprovedRequest.appointment_date), 'MMMM d, yyyy')}
-                        </p>
+                          {now && latestApprovedRequest ? format(new Date(latestApprovedRequest.appointment_date), 'MMMM d, yyyy') : ""}
+                        </div>
                       </div>
                     </div>
                     
@@ -645,29 +681,32 @@ export default function GuestDashboard() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">
                         <h3 className="text-sm font-medium text-muted-foreground mb-1">Reservation Time</h3>
-                        <p className="font-medium flex items-center">
+                        {/* Changed from <p> to <div> to fix hydration error */}
+                        <div className="font-medium flex items-center">
                           <Clock className="mr-1.5 h-4 w-4 text-blue-500" />
                           {parkingStartTime} - {parkingEndTime}
-                        </p>
+                        </div>
                       </div>
                       <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">
                         <h3 className="text-sm font-medium text-muted-foreground mb-1">Purpose of Visit</h3>
-                        <p className="font-medium flex items-center">
-                        <FileText className="mr-1.5 h-4 w-4" />
-                        {latestApprovedRequest?.purpose_of_visit?.substring(0, 50) || 'N/A'}
-                        {(latestApprovedRequest?.purpose_of_visit?.length ?? 0) > 50 ? '...' : ''}
-                        </p>
+                        {/* Changed from <p> to <div> to fix hydration error */}
+                        <div className="font-medium flex items-center">
+                          <FileText className="mr-1.5 h-4 w-4" />
+                          {latestApprovedRequest?.purpose_of_visit?.substring(0, 50) || 'N/A'}
+                          {(latestApprovedRequest?.purpose_of_visit?.length ?? 0) > 50 ? '...' : ''}
+                        </div>
                       </div>
                       <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">
                         <h3 className="text-sm font-medium text-muted-foreground mb-1">Status</h3>
-                        <p className="font-medium flex items-center">
+                        {/* Changed from <p> to <div> to fix hydration error */}
+                        <div className="font-medium flex items-center">
                           <Badge 
                             variant={latestApprovedRequest.status.toLowerCase() === 'approved' ? 'success' : 'outline'}
                             className="capitalize"
                           >
                             {latestApprovedRequest.status}
                           </Badge>
-                        </p>
+                        </div>
                       </div>
                     </div>
                   </CardContent>
@@ -727,12 +766,14 @@ export default function GuestDashboard() {
                       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center text-xs text-muted-foreground gap-2 sm:gap-0">
                         <span className="flex items-center">
                           <Calendar className="mr-1 h-4 w-4 text-blue-500" />
-                          {format(new Date(request.appointment_date), 'MMMM d, yyyy')}
+                          {now ? format(new Date(request.appointment_date), 'MMMM d, yyyy') : ""}
                         </span>
                         <span className="flex items-center">
                           <Clock className="mr-1 h-4 w-4 text-orange-500" />
-                          {format(new Date(`2000-01-01T${request.parking_start_time}`), 'h:mm a')} - 
-                          {format(new Date(`2000-01-01T${request.parking_end_time}`), 'h:mm a')}
+                          {request.parking_start_time && request.parking_end_time ? 
+                            `${formatParkingTime(request.parking_start_time)} - ${formatParkingTime(request.parking_end_time)}`
+                            : "N/A"
+                          }
                         </span>
                       </div>
                     </motion.div>

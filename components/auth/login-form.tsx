@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Login } from "@/app/api/auth/actions";
-import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { Spinner } from "@/components/shared/loading/spinner";
@@ -16,7 +15,6 @@ export function LoginForm({
   className,
   ...props
 }: React.ComponentPropsWithoutRef<"form">) {
-  const router = useRouter();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [emailError, setEmailError] = useState<string | null>(null);
@@ -64,31 +62,27 @@ export function LoginForm({
     setLoginError(null);
     
     try {
-      const response = await Login(formData);
+      // The Login server action will handle the redirection
+      // We don't need to do anything with the response
+      await Login(formData);
       
-      // Check for specific response properties that might indicate approval status
-      // Note: You'll need to modify your Login function to return these status codes or messages
+      // If we get here, something went wrong with the redirection
+      // Show a toast just in case, but we shouldn't normally get here
       toast({
         title: "Login Success!",
-        description: "You have successfully logged in.",
+        description: "You have successfully logged in. Redirecting...",
         className: "bg-green-500 text-white",
       });
-      
-      // Redirect to dashboard or home page after successful login
-      router.push("/dashboard");
-      
     } catch (error: any) {
       // Handle specific error cases based on error message or code
       let errorMessage = "Invalid email or password. Please try again.";
       
       if (error?.message) {
-        if (error.message.includes("not approved") || 
-            error.message.includes("pending approval") || 
+        if (error.message.includes("pending approval") || 
             error.message.includes("awaiting approval")) {
           errorMessage = "Your account exists but is pending admin approval.";
           setLoginError(errorMessage);
-        } else if (error.message.includes("not found") || 
-                  error.message.includes("incorrect password")) {
+        } else if (error.message.includes("Invalid login credentials")) {
           errorMessage = "Invalid email or password. Please try again.";
           setLoginError(errorMessage);
         } else {
