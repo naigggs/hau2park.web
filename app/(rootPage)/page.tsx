@@ -216,7 +216,7 @@ export default function Home() {
               >
                 <Image
                   src="/hero.png"
-                  alt="Smart parking visualization with HAU2PARK interface"
+                  alt="AI assisted parking visualization with HAU2PARK interface"
                   fill
                   className="object-cover"
                   priority
