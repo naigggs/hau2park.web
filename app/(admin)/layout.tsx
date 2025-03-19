@@ -25,7 +25,11 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "Admin Dashboard",
+  title: {
+    template: "HAU2PARK | %s",
+    default: "HAU2PARK | Admin"
+  },
+  description: "HAU2PARK Admin",
 };
 
 export default async function AdminLayout({

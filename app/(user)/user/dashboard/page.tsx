@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useUserInfo } from "@/hooks/use-user-info";
 import { useDashboardParking } from "@/hooks/use-dashboard-parking";
 import { 
@@ -31,21 +31,39 @@ export default function UserDashboard() {
   const { user, isLoading: userLoading } = useUserInfo();
   const { locations, activeUsers, parkingSpaces, isLoading: parkingLoading, refresh } = useDashboardParking();
   const [activeTab, setActiveTab] = useState("overview");
-
-  // Get the current time for greeting
-  const hours = new Date().getHours();
-  let greeting;
-  if (hours < 12) {
-    greeting = "Good Morning";
-  } else if (hours < 18) {
-    greeting = "Good Afternoon";
-  } else {
-    greeting = "Good Evening";
-  }
-
-  // Get the current date
-  const currentDate = format(new Date(), "EEEE, MMMM d, yyyy");
-  const currentDateTime = format(new Date(), "yyyy-MM-dd HH:mm:ss");
+  
+  // Initialize with empty strings to avoid hydration mismatch
+  const [greeting, setGreeting] = useState("");
+  const [currentDate, setCurrentDate] = useState("");
+  const [currentDateTime, setCurrentDateTime] = useState("");
+  const [now, setNow] = useState<Date | null>(null);
+  
+  // Calculate time-based values after component mounts
+  useEffect(() => {
+    const date = new Date();
+    setNow(date);
+    
+    const hours = date.getHours();
+    if (hours < 12) {
+      setGreeting("Good Morning");
+    } else if (hours < 18) {
+      setGreeting("Good Afternoon");
+    } else {
+      setGreeting("Good Evening");
+    }
+    
+    setCurrentDate(format(date, "EEEE, MMMM d, yyyy"));
+    setCurrentDateTime(format(date, "yyyy-MM-dd HH:mm:ss"));
+    
+    // Optional: Update the time every minute
+    const intervalId = setInterval(() => {
+      const newDate = new Date();
+      setNow(newDate);
+      setCurrentDateTime(format(newDate, "yyyy-MM-dd HH:mm:ss"));
+    }, 60000);
+    
+    return () => clearInterval(intervalId);
+  }, []);
   
   // Calculate overall parking statistics
   const totalSpaces = locations.reduce((sum, loc) => sum + loc.totalSpaces, 0);
@@ -72,10 +90,14 @@ export default function UserDashboard() {
           </h1>
           <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2 text-muted-foreground">
             <p>{currentDate}</p>
-            <div className="hidden sm:block text-xs">•</div>
-            <p className="text-sm">
-              Current Time (UTC): {currentDateTime}
-            </p>
+            {currentDate && (
+              <>
+                <div className="hidden sm:block text-xs">•</div>
+                <p className="text-sm">
+                  Current Time (UTC): {currentDateTime}
+                </p>
+              </>
+            )}
           </div>
         </div>
         
@@ -153,9 +175,12 @@ export default function UserDashboard() {
                       <span className="text-sm text-muted-foreground">Entry Time:</span>
                       <span className="font-medium flex items-center">
                         <Clock className="mr-1 h-4 w-4 text-muted-foreground" />
-                        {new Date(
-                          userParkingSpace.allocated_at || userParkingSpace.updated_at
-                        ).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {userParkingSpace.allocated_at || userParkingSpace.updated_at ? 
+                          new Date(
+                            userParkingSpace.allocated_at || userParkingSpace.updated_at
+                          ).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                          : "--:--"
+                        }
                       </span>
                     </div>
                   </div>

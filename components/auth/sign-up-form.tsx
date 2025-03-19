@@ -193,6 +193,19 @@ export function SignUpForm({
     setFileError(null);
     return true;
   };
+  
+  // Validate file type (only allowing images and PDFs)
+  const validateFileType = (file: File) => {
+    const allowedTypes = ['image/jpeg', 'image/png', 'application/pdf'];
+    
+    if (!allowedTypes.includes(file.type)) {
+      setFileError("File type not supported. Please upload a PNG, JPG, or PDF file.");
+      return false;
+    }
+    
+    setFileError(null);
+    return true;
+  };
 
   // Generate file preview
   const generateFilePreview = (file: File) => {

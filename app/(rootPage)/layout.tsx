@@ -16,7 +16,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Landing Page",
+  title: {
+    template: "HAU2PARK | %s",
+    default: "HAU2PARK Landing Page"
+  },
+  description: "HAU2PARK Landing Page",
 };
 
 export default function RootLayout({

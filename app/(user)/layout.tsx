@@ -27,7 +27,11 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "User Dashboard",
+  title: {
+    template: "HAU2PARK | %s",
+    default: "HAU2PARK | User"
+  },
+  description: "HAU2PARK User",
 };
 
 export default async function UserLayout({

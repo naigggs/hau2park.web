@@ -24,8 +24,13 @@ const poppins = Poppins({
   weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
 });
 
+// Define the template
 export const metadata: Metadata = {
-  title: "Guest Dashboard",
+  title: {
+    template: "HAU2PARK | %s",
+    default: "HAU2PARK | Guest"
+  },
+  description: "HAU2PARK Parking Management System for Guests",
 };
 
 export default async function GuestLayout({
