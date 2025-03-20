@@ -6,21 +6,41 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Login } from "@/app/api/auth/actions";
 import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Spinner } from "@/components/shared/loading/spinner";
 import { Eye, EyeOff, AlertCircle } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
 
 export function LoginForm({
   className,
   ...props
 }: React.ComponentPropsWithoutRef<"form">) {
+  const router = useRouter();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [emailError, setEmailError] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
+  const [redirecting, setRedirecting] = useState(false);
+
+  // Trigger route change events for GlobalLoader
+  useEffect(() => {
+    if (redirecting) {
+      // Create and dispatch custom events that your GlobalLoader listens for
+      window.dispatchEvent(new Event("next-route-start"));
+      
+      // After a delay, initiate the actual redirect
+      const timer = setTimeout(() => {
+        const redirectUrl = sessionStorage.getItem("redirectUrl") || "/";
+        window.location.href = redirectUrl;
+      }, 1500);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [redirecting]);
 
   function validateForm(email: string, password: string): boolean {
     let isValid = true;
@@ -72,34 +92,34 @@ export function LoginForm({
       // Call the Login server action and handle the structured response
       const result = await Login(formData);
       
-      // If we get here without a redirect, check for errors
-      if (result && !result.success) {
-        setLoginError(result.error || "Login failed. Please try again.");
-        toast({
-          variant: "destructive",
-          title: "Login failed",
-          description: result.error || "Login failed. Please try again.",
-        });
-      } else {
-        // Success case without redirect (should rarely happen)
+      if (result && result.success && result.redirectTo) {
+        // Store the redirect URL in sessionStorage
+        sessionStorage.setItem("redirectUrl", result.redirectTo);
+        
+        // Show success toast
         toast({
           title: "Login Success!",
           description: "You have successfully logged in. Redirecting...",
           className: "bg-green-500 text-white",
         });
+        
+        // Set redirecting state to trigger the global loader
+        setRedirecting(true);
+      } else if (result && !result.success) {
+        // Handle error with specific message
+        setLoginError(result.error || "Login failed. Please try again.");
+      } else {
+        // Unexpected response format
+        setLoginError("Login failed. Unexpected response from server.");
       }
     } catch (error: any) {
       // This will catch any unhandled errors
       console.error("Login error:", error);
-      const errorMessage = "An unexpected error occurred. Please try again.";
-      setLoginError(errorMessage);
-      toast({
-        variant: "destructive",
-        title: "Login failed",
-        description: errorMessage,
-      });
+      setLoginError("An unexpected error occurred. Please try again.");
     } finally {
-      setLoading(false);
+      if (!redirecting) {
+        setLoading(false);
+      }
     }
   }
 
@@ -117,10 +137,17 @@ export function LoginForm({
       </div>
       
       {loginError && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{loginError}</AlertDescription>
-        </Alert>
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          <Alert variant="destructive" className="border-red-500/50 bg-red-50 text-red-800">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle className="font-medium">Authentication Error</AlertTitle>
+            <AlertDescription className="text-sm mt-1">{loginError}</AlertDescription>
+          </Alert>
+        </motion.div>
       )}
       
       <div className="grid gap-6">
@@ -133,18 +160,30 @@ export function LoginForm({
             placeholder="m@example.com"
             required
             onChange={() => setEmailError(null)}
-            className={emailError ? "border-red-500" : ""}
+            className={cn(
+              emailError ? "border-red-500 focus-visible:ring-red-300" : "",
+              "transition-all duration-200"
+            )}
           />
           {emailError && (
-            <p className="text-xs text-red-500">{emailError}</p>
+            <motion.p 
+              className="text-xs text-red-500 flex items-center gap-1.5"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              transition={{ duration: 0.2 }}
+            >
+              <AlertCircle className="h-3 w-3" />
+              {emailError}
+            </motion.p>
           )}
         </div>
+        
         <div className="grid gap-2">
           <div className="flex items-center justify-between">
             <Label htmlFor="password">Password</Label>
             <a 
               href="/auth/forgot-password" 
-              className="text-sm text-muted-foreground hover:underline"
+              className="text-xs text-primary hover:underline transition-colors"
             >
               Forgot password?
             </a>
@@ -158,46 +197,63 @@ export function LoginForm({
               minLength={6}
               onChange={() => setPasswordError(null)}
               className={cn(
-                passwordError ? "border-red-500" : "",
-                "pr-10" // Add padding on the right to accommodate the icon
+                passwordError ? "border-red-500 focus-visible:ring-red-300" : "",
+                "pr-10 transition-all duration-200"
               )}
             />
             <button
               type="button"
-              className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
+              className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground transition-colors"
               onClick={() => setShowPassword(!showPassword)}
             >
               {showPassword ? (
-                <EyeOff className="h-5 w-5" />
+                <EyeOff className="h-4 w-4" />
               ) : (
-                <Eye className="h-5 w-5" />
+                <Eye className="h-4 w-4" />
               )}
             </button>
           </div>
           {passwordError && (
-            <p className="text-xs text-red-500">{passwordError}</p>
+            <motion.p 
+              className="text-xs text-red-500 flex items-center gap-1.5"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              transition={{ duration: 0.2 }}
+            >
+              <AlertCircle className="h-3 w-3" />
+              {passwordError}
+            </motion.p>
           )}
         </div>
-        <Button type="submit" className="w-full" disabled={loading}>
+        
+        <Button 
+          type="submit" 
+          className="w-full" 
+          disabled={loading || redirecting}
+          variant={redirecting ? "outline" : "default"}
+        >
           {loading ? (
             <span className="flex items-center justify-center gap-2">
               <Spinner size="sm" />
               Logging in...
             </span>
+          ) : redirecting ? (
+            <span className="text-primary">Login Successful</span>
           ) : (
             "Login"
           )}
         </Button>
       </div>
+      
       <div className="text-center text-sm">
         Are you a guest?{" "}
-        <a href="/auth/guest-form" className="underline underline-offset-4">
+        <a href="/auth/guest-form" className="text-primary hover:underline transition-colors">
           Guest Form
         </a>
       </div>
       <div className="text-center text-sm">
         Don&apos;t have an account?{" "}
-        <a href="/auth/register" className="underline underline-offset-4">
+        <a href="/auth/register" className="text-primary hover:underline transition-colors">
           Sign up
         </a>
       </div>

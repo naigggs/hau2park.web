@@ -6,67 +6,63 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 
 export async function Login(formData: FormData) {
-  try {
-    const supabase = await createClient();
-    const email = formData.get("email") as string;
-    const password = formData.get("password") as string;
+  const supabase = await createClient();
+  const email = formData.get("email") as string;
+  const password = formData.get("password") as string;
 
-    // First, check if the email exists in the account_sign_up table (pending approval)
-    const { data: pendingAccount, error: pendingError } = await supabase
-      .from("account_sign_up")
-      .select("*")
-      .eq("email", email)
-      .single();
+  // First, check if the email exists in the account_sign_up table (pending approval)
+  const { data: pendingAccount, error: pendingError } = await supabase
+    .from("account_sign_up")
+    .select("*")
+    .eq("email", email)
+    .single();
 
-    if (!pendingError && pendingAccount) {
-      // Account exists but is pending approval
-      return { 
-        success: false, 
-        error: "Your account is pending administrator approval. Please check back later." 
-      };
-    }
-
-    // If not in pending accounts, proceed with normal login
-    const { data: authData, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (error) {
-      if (error.message === "Invalid login credentials") {
-        return { success: false, error: "Invalid email or password. Please try again." };
-      }
-      return { success: false, error: error.message };
-    }
-
-    const { data: roleData, error: roleError } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", authData.user.id)
-      .single();
-
-    if (roleError) {
-      return { success: false, error: "Error fetching user role. Please try again." };
-    }
-
-    revalidatePath("/", "layout");
-
-    if (roleData.role === "Admin") {
-      redirect("/admin/dashboard");
-    } else if (roleData.role === "Staff") {
-      redirect("/staff/dashboard");
-    } else if (roleData.role === "User") {
-      redirect("/user/dashboard");
-    } else if (roleData.role === "Guest") {
-      redirect("/guest/dashboard");
-    }
-    
-    // This should never be reached due to redirects, but just in case
-    return { success: true };
-  } catch (error) {
-    console.error("Login error:", error);
-    return { success: false, error: "An unexpected error occurred. Please try again." };
+  if (!pendingError && pendingAccount) {
+    // Account exists but is pending approval
+    return { 
+      success: false, 
+      error: "Your account is pending administrator approval. Please check back later." 
+    };
   }
+
+  // If not in pending accounts, proceed with normal login
+  const { data: authData, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
+
+  if (error) {
+    if (error.message === "Invalid login credentials") {
+      return { success: false, error: "Invalid email or password. Please try again." };
+    }
+    return { success: false, error: error.message };
+  }
+
+  const { data: roleData, error: roleError } = await supabase
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", authData.user.id)
+    .single();
+
+  if (roleError) {
+    return { success: false, error: "Error fetching user role. Please try again." };
+  }
+
+  revalidatePath("/", "layout");
+
+  // Store the destination in the response before redirecting
+  const destination = 
+    roleData.role === "Admin" ? "/admin/dashboard" :
+    roleData.role === "Staff" ? "/staff/dashboard" :
+    roleData.role === "User" ? "/user/dashboard" :
+    roleData.role === "Guest" ? "/guest/dashboard" :
+    "/";
+
+  // Return success and redirect URL instead of calling redirect()
+  return { 
+    success: true,
+    redirectTo: destination
+  };
 }
 
 export async function GuestSignUp(formData: FormData) {
