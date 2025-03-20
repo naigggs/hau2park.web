@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Table,
   TableBody,
@@ -23,9 +23,12 @@ import { motion } from "framer-motion";
 export function GuestList() {
   const { guestList, error, loading } = useGuestListSubscription();
   const [selectedGuest, setSelectedGuest] = useState<GuestListType | null>(null);
+  const [pendingApprovals, setPendingApprovals] = useState<GuestListType[]>([]);
   const isMobile = useMediaQuery("(max-width: 768px)");
 
-  const pendingApprovals = guestList?.filter((guest) => guest.status === "Open") || [];
+  useEffect(() => {
+    setPendingApprovals(guestList.filter((guest) => guest.status === "Open"));
+  }, [guestList]);
 
   // Format time to be more elegant
   const formatTimeRange = (startTime: string, endTime: string) => {
@@ -231,6 +234,10 @@ export function GuestList() {
     </Card>
   );
 
+  const handleGuestStatusChange = (guestId: number, newStatus: string) => {
+    setPendingApprovals(current => current.filter(guest => guest.id !== guestId));
+  };
+
   return (
     <div className="w-full max-w-[950px]">
       {/* Conditionally render mobile or desktop view */}
@@ -239,6 +246,7 @@ export function GuestList() {
       <GuestModal
         guest={selectedGuest}
         onClose={() => setSelectedGuest(null)}
+        onStatusChange={handleGuestStatusChange}
       />
     </div>
   );

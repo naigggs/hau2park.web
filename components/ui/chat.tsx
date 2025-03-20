@@ -33,6 +33,9 @@ interface ChatPropsBase {
   availableParkingSpaces?: string[]
   awaitingConfirmation?: string | null
   entranceConfirmation?: boolean | null
+  isUserParked?: boolean
+  userParkingSpace?: string | null
+  parkingStatus?: "Occupied" | "Reserved" | null
 }
 
 interface ChatPropsWithoutSuggestions extends ChatPropsBase {
@@ -62,7 +65,10 @@ export function Chat({
   onCommandClick,
   availableParkingSpaces,
   awaitingConfirmation,
-  entranceConfirmation
+  entranceConfirmation,
+  isUserParked,
+  userParkingSpace,
+  parkingStatus,
 }: ChatProps) {
   const [isTextInputVisible, setIsTextInputVisible] = useState(false);
   const lastMessage = messages.at(-1)
@@ -145,6 +151,9 @@ export function Chat({
                 availableParkingSpaces={availableParkingSpaces}
                 awaitingConfirmation={awaitingConfirmation}
                 entranceConfirmation={entranceConfirmation}
+                isUserParked={isUserParked}
+                userParkingSpace={userParkingSpace}
+                parkingStatus={parkingStatus}
               />
             )}
             {isTextInputVisible && (

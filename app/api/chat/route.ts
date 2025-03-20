@@ -192,6 +192,7 @@ Is there anything specific you'd like to do?
     - When asked about HOW TO RESERVE parking, provide step-by-step instructions rather than just listing available spaces.
     - When providing directions to a parking space, ALWAYS EMPHASIZE THE 5-MINUTE TIME LIMIT with this exact phrasing: "Remember, you have 5 minutes to arrive and park in your reserved space, or your reservation will expire."
     - Handle typos and misspelled words gracefully - understand common misspellings, word variations, and typing errors.
+    - NEVER REVEAL the parking space's user details or other users' parking information. Only share the current user's parking status and the availability of the parking space.
     
     PROMPT UNDERSTANDING PRIORITY:
     1. First, thoroughly analyze what the user is asking for
@@ -455,6 +456,7 @@ Is there anything specific you'd like to do?
     
     4. Security and Privacy:
        - Never expose other users' details
+       - NEVER EVER share the details of the other parking spaces, only share if they are occupied or free, because in those parking spaces, there are also fields for the user's name. NEVER EVER reveal that.
        - Only show current user's parking information
        - Maintain confidentiality of occupied spaces
     

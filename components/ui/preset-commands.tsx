@@ -14,7 +14,10 @@ interface PresetCommandsProps {
   onToggleTextInput?: () => void;
   availableParkingSpaces?: string[];
   awaitingConfirmation?: string | null;
-  entranceConfirmation?: boolean| null;
+  entranceConfirmation?: boolean | null;
+  isUserParked?: boolean;
+  userParkingSpace?: string | null;
+  parkingStatus?: "Occupied" | "Reserved" | null;
 }
 
 export function PresetCommands({
@@ -24,9 +27,26 @@ export function PresetCommands({
   availableParkingSpaces = [],
   awaitingConfirmation,
   entranceConfirmation,
+  isUserParked = false,
+  userParkingSpace = null,
+  parkingStatus = null,
 }: PresetCommandsProps) {
   const [isCommandsVisible, setIsCommandsVisible] = useState(true);
   const [isUsingDefaultCommands, setIsUsingDefaultCommands] = useState(true);
+
+  const occupiedUserCommands = [
+    `Where is my car in ${userParkingSpace}?`,
+    "Get directions to my car",
+    "Show parking rules",
+    "What's my parking duration?",
+  ];
+
+  const reservedUserCommands = [
+    `Show route to ${userParkingSpace}`,
+    "Cancel my reservation",
+    "How much time left to park?",
+    "Show parking rules",
+  ];
 
   const defaultCommands = [
     "Check parking availability",
@@ -39,7 +59,13 @@ export function PresetCommands({
 
   // Generate commands based on state
   const commands = isUsingDefaultCommands
-    ? defaultCommands
+    ? (isUserParked 
+        ? (parkingStatus === "Occupied" 
+            ? occupiedUserCommands 
+            : parkingStatus === "Reserved" 
+              ? reservedUserCommands 
+              : defaultCommands)
+        : defaultCommands)
     : awaitingConfirmation
     ? ["Yes", "No, I will find another parking spot", "Reset quick actions"]
     : entranceConfirmation
@@ -49,7 +75,13 @@ export function PresetCommands({
         ...availableParkingSpaces.map((space) => `I want to park in ${space}`),
         "Reset quick actions",
       ]
-    : defaultCommands;
+    : (isUserParked 
+        ? (parkingStatus === "Occupied" 
+            ? occupiedUserCommands 
+            : parkingStatus === "Reserved" 
+              ? reservedUserCommands 
+              : defaultCommands)
+        : defaultCommands);
 
   // Update commands when props change
   useEffect(() => {

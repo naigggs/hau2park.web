@@ -55,6 +55,13 @@ export function LoginForm({
     
     // Validate form before submission
     if (!validateForm(email, password)) {
+      if (password.length < 6) {
+        toast({
+          variant: "destructive",
+          title: "Invalid password",
+          description: "Password must be at least 6 characters long",
+        });
+      }
       return;
     }
     
