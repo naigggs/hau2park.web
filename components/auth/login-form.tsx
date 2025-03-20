@@ -69,37 +69,30 @@ export function LoginForm({
     setLoginError(null);
     
     try {
-      // The Login server action will handle the redirection
-      // We don't need to do anything with the response
-      await Login(formData);
+      // Call the Login server action and handle the structured response
+      const result = await Login(formData);
       
-      // If we get here, something went wrong with the redirection
-      // Show a toast just in case, but we shouldn't normally get here
-      toast({
-        title: "Login Success!",
-        description: "You have successfully logged in. Redirecting...",
-        className: "bg-green-500 text-white",
-      });
-    } catch (error: any) {
-      // Handle specific error cases based on error message or code
-      let errorMessage = "Invalid email or password. Please try again.";
-      
-      if (error?.message) {
-        if (error.message.includes("pending approval") || 
-            error.message.includes("awaiting approval")) {
-          errorMessage = "Your account exists but is pending admin approval.";
-          setLoginError(errorMessage);
-        } else if (error.message.includes("Invalid login credentials")) {
-          errorMessage = "Invalid email or password. Please try again.";
-          setLoginError(errorMessage);
-        } else {
-          // For other errors, use the actual error message
-          errorMessage = error.message;
-          setLoginError(errorMessage);
-        }
+      // If we get here without a redirect, check for errors
+      if (result && !result.success) {
+        setLoginError(result.error || "Login failed. Please try again.");
+        toast({
+          variant: "destructive",
+          title: "Login failed",
+          description: result.error || "Login failed. Please try again.",
+        });
+      } else {
+        // Success case without redirect (should rarely happen)
+        toast({
+          title: "Login Success!",
+          description: "You have successfully logged in. Redirecting...",
+          className: "bg-green-500 text-white",
+        });
       }
-      
-      // Display toast for all error types
+    } catch (error: any) {
+      // This will catch any unhandled errors
+      console.error("Login error:", error);
+      const errorMessage = "An unexpected error occurred. Please try again.";
+      setLoginError(errorMessage);
       toast({
         variant: "destructive",
         title: "Login failed",
