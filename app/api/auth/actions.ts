@@ -19,7 +19,10 @@ export async function Login(formData: FormData) {
 
   if (!pendingError && pendingAccount) {
     // Account exists but is pending approval
-    throw new Error("Your account is pending administrator approval. Please check back later.");
+    return { 
+      success: false, 
+      error: "Your account is pending administrator approval. Please check back later." 
+    };
   }
 
   // If not in pending accounts, proceed with normal login
@@ -30,9 +33,9 @@ export async function Login(formData: FormData) {
 
   if (error) {
     if (error.message === "Invalid login credentials") {
-      throw new Error("Invalid email or password. Please try again.");
+      return { success: false, error: "Invalid email or password. Please try again." };
     }
-    throw new Error(error.message);
+    return { success: false, error: error.message };
   }
 
   const { data: roleData, error: roleError } = await supabase
@@ -42,20 +45,24 @@ export async function Login(formData: FormData) {
     .single();
 
   if (roleError) {
-    throw new Error("Error fetching user role. Please try again.");
+    return { success: false, error: "Error fetching user role. Please try again." };
   }
 
   revalidatePath("/", "layout");
 
-  if (roleData.role === "Admin") {
-    redirect("/admin/dashboard");
-  } else if (roleData.role === "Staff") {
-    redirect("/staff/dashboard");
-  } else if (roleData.role === "User") {
-    redirect("/user/dashboard");
-  } else if (roleData.role === "Guest") {
-    redirect("/guest/dashboard");
-  }
+  // Store the destination in the response before redirecting
+  const destination = 
+    roleData.role === "Admin" ? "/admin/dashboard" :
+    roleData.role === "Staff" ? "/staff/dashboard" :
+    roleData.role === "User" ? "/user/dashboard" :
+    roleData.role === "Guest" ? "/guest/dashboard" :
+    "/";
+
+  // Return success and redirect URL instead of calling redirect()
+  return { 
+    success: true,
+    redirectTo: destination
+  };
 }
 
 export async function GuestSignUp(formData: FormData) {
