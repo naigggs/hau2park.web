@@ -2,7 +2,7 @@
 
 import React, { useMemo, useState, useRef, useEffect } from "react"
 import { cva, type VariantProps } from "class-variance-authority"
-import { Code2, Loader2, Terminal, Map, Play, Pause, Volume2 } from "lucide-react"
+import { Code2, Loader2, Terminal, Map, Play, Pause, Volume2, VolumeX } from "lucide-react"
 import ChatbotMapsRoute from "./google-map-chat-message"
 import { cn } from "@/lib/utils"
 import { FilePreview } from "@/components/ui/file-preview"
@@ -111,6 +111,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
   const [isPlaying, setIsPlaying] = useState(false);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const files = useMemo(() => {
@@ -172,25 +173,31 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
   
       audio.onpause = () => setIsPlaying(false);
       audio.onplay = () => setIsPlaying(true);
+      audio.muted = isMuted;
   
       try {
         await audio.play();
       } catch (playError: any) {
-        // Silently handle AbortError since it's expected when audio is interrupted
         if (playError.name !== 'AbortError') {
           console.error('Playback error:', playError);
         }
       }
     } catch (error) {
-      // Only log non-abort errors
       if (error instanceof Error && error.name !== 'AbortError') {
         console.error('TTS error:', error);
       }
     } finally {
       setIsLoading(false);
     }
-};
-  
+  };
+
+  const toggleMute = () => {
+    setIsMuted(prev => !prev);
+    if (audioRef.current) {
+      audioRef.current.muted = !isMuted;
+    }
+  };
+
   // Update the cleanup effect
   useEffect(() => {
     const currentAudio = audioRef.current;
@@ -251,14 +258,11 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
             <Button
               size="icon"
               variant="outline"
-              onClick={handleTTS}
+              onClick={toggleMute}
               className="h-6 w-6 rounded-full"
-              disabled={isLoading}
             >
-              {isLoading ? (
-                <Loader2 className="h-3 w-3 animate-spin" />
-              ) : isPlaying ? (
-                <Pause className="h-3 w-3" />
+              {isMuted ? (
+                <VolumeX className="h-3 w-3" />
               ) : (
                 <Volume2 className="h-3 w-3" />
               )}
