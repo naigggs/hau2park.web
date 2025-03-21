@@ -49,7 +49,6 @@ export function PresetCommands({
   ];
 
   const defaultCommands = [
-    "Check parking availability",
     "Show available spaces",
     "How do I reserve parking?",
     "What's my parking status?",
