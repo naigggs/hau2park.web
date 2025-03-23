@@ -111,7 +111,7 @@ export default function Header() {
                   Login
                 </Button>
               </Link>
-              <Link href="/auth/signup">
+              <Link href="/auth/register">
                 <Button 
                   size="sm" 
                   className="h-9 px-4 rounded-full shadow-sm hover:shadow transition-all"
