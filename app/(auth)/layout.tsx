@@ -9,19 +9,34 @@ import { Suspense } from "react";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
+  display: "swap",
 });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://hau2park-web.vercel.app"),
   title: {
-    template: "HAU2PARK | %s",
-    default: "HAU2PARK | Auth"
+    template: "%s | HAU2Park",
+    default: "Authentication | HAU2Park"
   },
-  description: "HAU2PARK Auth",
+  description: "Secure authentication for HAU2Park's smart parking management system. Log in to manage your parking needs.",
+  keywords: ["HAU2Park login", "parking system login", "secure authentication", "HAU2Park access"],
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    title: "Authentication | HAU2Park",
+    description: "Secure authentication for HAU2Park's smart parking management system",
+    url: "https://hau2park-web.vercel.app/auth/login",
+  },
+  robots: {
+    index: true, // Login pages should be indexed so users can find them
+    follow: true,
+  },
 };
 
 export default function AuthLayout({

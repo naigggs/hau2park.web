@@ -14,20 +14,31 @@ const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
   weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
+  display: "swap",
 });
 
 const poppins = Poppins({
   variable: "--font-poppins",
   subsets: ["latin"],
   weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://hau2park-web.vercel.app"),
   title: {
-    template: "HAU2PARK | %s",
-    default: "HAU2PARK | Staff"
+    template: "%s | HAU2Park Staff",
+    default: "Staff Portal | HAU2Park"
   },
-  description: "HAU2PARK Staff",
+  description: "Staff portal for HAU2Park parking management system. Monitor parking spaces and manage guest requests.",
+  robots: {
+    index: false, // Don't index staff pages
+    follow: false,
+    googleBot: {
+      index: false,
+      follow: false,
+    },
+  },
 };
 
 export default async function StaffLayout({

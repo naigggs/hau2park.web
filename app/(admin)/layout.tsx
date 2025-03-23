@@ -16,20 +16,31 @@ const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
   weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
+  display: "swap",
 });
 
 const poppins = Poppins({
   variable: "--font-poppins",
   subsets: ["latin"],
   weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://hau2park-web.vercel.app"),
   title: {
-    template: "HAU2PARK | %s",
-    default: "HAU2PARK | Admin"
+    template: "%s | HAU2Park Admin",
+    default: "Admin Dashboard | HAU2Park"
   },
-  description: "HAU2PARK Admin",
+  description: "Administrative dashboard for HAU2Park parking management system. Manage users, spaces, and system settings.",
+  robots: {
+    index: false, // Don't index admin pages
+    follow: false,
+    googleBot: {
+      index: false,
+      follow: false,
+    },
+  },
 };
 
 export default async function AdminLayout({
