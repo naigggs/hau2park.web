@@ -16,21 +16,32 @@ const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
   weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
+  display: "swap",
 });
 
 const poppins = Poppins({
   variable: "--font-poppins",
   subsets: ["latin"],
   weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
+  display: "swap",
 });
 
-// Define the template
 export const metadata: Metadata = {
+  metadataBase: new URL("https://hau2park-web.vercel.app"),
   title: {
-    template: "HAU2PARK | %s",
-    default: "HAU2PARK | Guest"
+    template: "%s | HAU2Park Guest",
+    default: "Guest Portal | HAU2Park"
   },
-  description: "HAU2PARK Parking Management System for Guests",
+  description: "Guest portal for HAU2Park parking management system. Request visitor parking and get QR codes for access.",
+  keywords: ["guest parking", "visitor parking", "HAU2Park guest", "parking QR code", "visitor access"],
+  robots: {
+    index: false, // Don't index authenticated guest pages
+    follow: false,
+    googleBot: {
+      index: false,
+      follow: false,
+    },
+  },
 };
 
 export default async function GuestLayout({

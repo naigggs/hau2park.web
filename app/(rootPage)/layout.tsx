@@ -8,19 +8,63 @@ import { Suspense } from "react";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
+  display: "swap",
 });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://hau2park-web.vercel.app"),
   title: {
-    template: "HAU2PARK | %s",
-    default: "HAU2PARK Landing Page"
+    template: "%s | HAU2Park",
+    default: "HAU2Park - Smart Parking Management System"
   },
-  description: "HAU2PARK Landing Page",
+  description: "HAU2Park is an efficient parking management system that helps institutions, campuses, and organizations streamline their parking operations.",
+  keywords: ["parking management", "smart parking", "HAU2Park", "campus parking", "parking system", "automated parking"],
+  authors: [{ name: "HAU2Park Team" }],
+  creator: "HAU2Park",
+  publisher: "HAU2Park",
+  alternates: {
+    canonical: "https://hau2park-web.vercel.app",
+  },
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: "https://hau2park-web.vercel.app",
+    siteName: "HAU2Park",
+    title: "HAU2Park - Smart Parking Management System",
+    description: "Efficient parking management solution for campuses and institutions",
+    images: [
+      {
+        url: "/public/images/hero.png",
+        width: 1200,
+        height: 630,
+        alt: "HAU2Park",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "HAU2Park - Smart Parking Management System",
+    description: "Efficient parking management solution for campuses and institutions",
+    images: ["/public/images/hero.png"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+    },
+  },
+  viewport: "width=device-width, initial-scale=1",
+  icons: {
+    icon: "/favicon.ico",
+  },
 };
 
 export default function RootLayout({

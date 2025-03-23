@@ -18,20 +18,31 @@ const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
   weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
+  display: "swap",
 });
 
 const poppins = Poppins({
   variable: "--font-poppins",
   subsets: ["latin"],
   weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://hau2park-web.vercel.app"),
   title: {
-    template: "HAU2PARK | %s",
-    default: "HAU2PARK | User"
+    template: "%s | HAU2Park User",
+    default: "User Dashboard | HAU2Park"
   },
-  description: "HAU2PARK User",
+  description: "User dashboard for HAU2Park parking management system. Check parking status and manage your parking profile.",
+  robots: {
+    index: false, // Don't index authenticated user pages
+    follow: false,
+    googleBot: {
+      index: false,
+      follow: false,
+    },
+  },
 };
 
 export default async function UserLayout({

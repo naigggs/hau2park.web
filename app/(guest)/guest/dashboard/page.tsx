@@ -803,67 +803,6 @@ export default function GuestDashboard() {
           </Card>
         </TabsContent>
       </Tabs>
-
-      {/* Mobile bottom navigation - only visible on mobile, now more subtle */}
-      {isMobile && (
-        <motion.div
-          initial={{ y: 100, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.4 }}
-          className="fixed bottom-0 left-0 right-0 z-50"
-        >
-          <div className="p-2 bg-white/90 dark:bg-gray-900/90 backdrop-blur-md border-t border-gray-200 dark:border-gray-800 shadow-md">
-            <div className="flex justify-around">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => setActiveTab("overview")} 
-                className={cn(
-                  "flex flex-col items-center gap-0.5 h-auto py-1.5 px-3",
-                  activeTab === "overview" && "bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300"
-                )}
-              >
-                <Home className="h-4 w-4" />
-                <span className="text-[10px]">Overview</span>
-              </Button>
-              
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => setActiveTab("history")} 
-                className={cn(
-                  "flex flex-col items-center gap-0.5 h-auto py-1.5 px-3",
-                  activeTab === "history" && "bg-orange-50 text-orange-700 dark:bg-orange-950 dark:text-orange-300"
-                )}
-              >
-                <History className="h-4 w-4" />
-                <span className="text-[10px]">History</span>
-              </Button>
-              
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={handleRefresh} 
-                disabled={refreshing}
-                className="flex flex-col items-center gap-0.5 h-auto py-1.5 px-3"
-              >
-                <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} />
-                <span className="text-[10px]">Refresh</span>
-              </Button>
-              
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={handleRequestClick} 
-                className="flex flex-col items-center gap-0.5 h-auto py-1.5 px-3"
-              >
-                <Bell className="h-4 w-4" />
-                <span className="text-[10px]">Request</span>
-              </Button>
-            </div>
-          </div>
-        </motion.div>
-      )}
     </div>
   );
 }
