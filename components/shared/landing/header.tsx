@@ -14,7 +14,8 @@ import {
   Phone,
   LogIn,
   UserPlus,
-  HelpCircle
+  HelpCircle,
+  BookOpen
 } from "lucide-react"
 
 export default function Header() {
@@ -82,6 +83,12 @@ export default function Header() {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
+            <Link
+              href="/guide"
+              className="text-sm font-medium text-zinc-600 hover:text-primary transition-colors dark:text-zinc-300 px-1 py-1.5 relative after:absolute after:bottom-0 after:left-0 after:h-[2px] after:w-0 after:bg-primary after:transition-all hover:after:w-full"
+            >
+              User Guide
+            </Link>
             <Link
               href="/contact"
               className="text-sm font-medium text-zinc-600 hover:text-primary transition-colors dark:text-zinc-300 px-1 py-1.5 relative after:absolute after:bottom-0 after:left-0 after:h-[2px] after:w-0 after:bg-primary after:transition-all hover:after:w-full"
@@ -190,6 +197,17 @@ export default function Header() {
                       <Home className="h-4.5 w-4.5" />
                     </div>
                     <span className="font-medium">Home</span>
+                  </Link>
+
+                  <Link
+                    href="/guide"
+                    className="flex items-center space-x-3.5 p-3.5 rounded-xl hover:bg-zinc-50 dark:hover:bg-zinc-800/70 transition-colors"
+                    onClick={toggleMenu}
+                  >
+                    <div className="w-9 h-9 flex items-center justify-center rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400">
+                      <BookOpen className="h-4.5 w-4.5" />
+                    </div>
+                    <span className="font-medium">User Guide</span>
                   </Link>
 
                   <Link

@@ -80,6 +80,7 @@ export async function updateSession(request: NextRequest) {
       request.nextUrl.pathname === '/' ||
       request.nextUrl.pathname === '/faq' ||
       request.nextUrl.pathname === '/contact' ||
+      request.nextUrl.pathname === '/guide' ||
       request.nextUrl.pathname === '/api/contact' ||
       request.nextUrl.pathname.startsWith('/login') ||
       request.nextUrl.pathname.startsWith('/auth')
