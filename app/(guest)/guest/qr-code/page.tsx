@@ -90,6 +90,8 @@ function QRCodePageContent() {
   const [requestToDelete, setRequestToDelete] = useState<string | null>(null);
   const [isDeletingRequest, setIsDeletingRequest] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  // New state to track first-time users
+  const [isFirstTimeUser, setIsFirstTimeUser] = useState(true);
   
   // Get QR code data to determine if we should hide the getting started section
   const { guestQRList, loading: loadingQRs, canCreateRequest, refresh: refreshQRCodes } = useGuestQRCodeList();
@@ -102,6 +104,19 @@ function QRCodePageContent() {
   
   // Reference to supabase subscription
   const supabaseSubscription = useRef<RealtimeChannel | null>(null);
+  
+  // Check if this is first time user (on component mount)
+  useEffect(() => {
+    // Get first-time status from localStorage
+    const hasVisitedBefore = localStorage.getItem('guestPortalVisited');
+    if (!hasVisitedBefore) {
+      // First time user - record this visit for future
+      localStorage.setItem('guestPortalVisited', 'true');
+      setIsFirstTimeUser(true);
+    } else {
+      setIsFirstTimeUser(false);
+    }
+  }, []);
   
   // Check if device is mobile (client-side only)
   useEffect(() => {
@@ -186,7 +201,7 @@ function QRCodePageContent() {
       });
       
       // Also refresh the QR codes list to update canCreateRequest status
-      if (refreshQRCodes) {
+      if (refreshQRCodes) { 
         await refreshQRCodes();
       }
       
@@ -318,6 +333,238 @@ function QRCodePageContent() {
     return "";
   };
 
+  // Component for Getting Started Card
+  const GettingStartedCard = () => (
+    <Card className="border overflow-hidden bg-gradient-to-br from-primary/5 to-secondary/5">
+      <CardHeader 
+        className="space-y-1 pb-2 cursor-pointer" 
+        onClick={toggleGettingStarted}
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <Sparkles className="h-5 w-5 mr-2 text-primary" />
+            <CardTitle className="text-lg font-medium">Getting Started</CardTitle>
+          </div>
+          {isGettingStartedExpanded ? (
+            <ChevronUp className="h-5 w-5" />
+          ) : (
+            <ChevronDown className="h-5 w-5" />
+          )}
+        </div>
+        <CardDescription>
+          Welcome{firstName ? `, ${firstName}` : ''}! Follow these simple steps to reserve your parking.
+        </CardDescription>
+      </CardHeader>
+      
+      <AnimatePresence initial={false}>
+        {isGettingStartedExpanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="overflow-hidden"
+          >
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {/* Step cards with improved mobile styling */}
+                <StepCard 
+                  number={1} 
+                  title="Submit a Request" 
+                  description="Click 'Request' button above" 
+                  icon={<StepOneIcon className="h-5 w-5" />}
+                  color="blue"
+                />
+                <StepCard 
+                  number={2} 
+                  title="Fill in Details" 
+                  description="Provide your visit information" 
+                  icon={<StepTwoIcon className="h-5 w-5" />}
+                  color="orange"
+                />
+                <StepCard 
+                  number={3} 
+                  title="Get Your QR Code" 
+                  description="Save or access your QR code here" 
+                  icon={<StepThreeIcon className="h-5 w-5" />}
+                  color="blue"
+                />
+                <StepCard 
+                  number={4} 
+                  title="Visit Campus" 
+                  description="Show it at the entrance and get it scanned" 
+                  icon={<StepFourIcon className="h-5 w-5" />}
+                  color="orange"
+                />
+              </div>
+            </CardContent>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </Card>
+  );
+
+  // Component for Open Requests Card
+  const OpenRequestsCard = () => (
+    <>
+      {isLoadingRequests && !isRefreshing ? (
+        <Card>
+          <CardHeader className="pb-2">
+            <Skeleton className="h-6 w-48" />
+          </CardHeader>
+          <CardContent>
+            <Skeleton className="h-16 w-full" />
+          </CardContent>
+        </Card>
+      ) : (
+        <Card className="border shadow-sm overflow-hidden">
+          <CardHeader 
+            className="pb-2 cursor-pointer" 
+            onClick={toggleOpenRequests}
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <AlertCircle className="h-5 w-5 mr-2 text-amber-500" />
+                <CardTitle className="text-lg font-medium">
+                  Open Requests
+                  {pendingRequests.length > 0 && (
+                    <Badge variant="outline" className="ml-2">
+                      {pendingRequests.length}
+                    </Badge>
+                  )}
+                </CardTitle>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleRefresh();
+                  }}
+                  disabled={isRefreshing}
+                  className="h-8 w-8 p-0"
+                  title="Refresh requests"
+                >
+                  <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
+                  <span className="sr-only">Refresh</span>
+                </Button>
+                {isOpenRequestsExpanded ? (
+                  <ChevronUp className="h-5 w-5" />
+                ) : (
+                  <ChevronDown className="h-5 w-5" />
+                )}
+              </div>
+            </div>
+            <CardDescription className="flex justify-between items-center">
+              <span>
+                {pendingRequests.length > 0 
+                  ? "Waiting for processing"
+                  : "No open parking requests"}
+              </span>
+              {lastUpdated && (
+                <span className="text-xs">
+                  Updated: {lastUpdated}
+                </span>
+              )}
+            </CardDescription>
+          </CardHeader>
+          
+          <AnimatePresence initial={false}>
+            {isOpenRequestsExpanded && pendingRequests.length > 0 && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.3 }}
+                className="overflow-hidden"
+              >
+                <CardContent className="pt-0">
+                  <div className="space-y-3 mt-2">
+                    {pendingRequests.map((request) => (
+                      <motion.div 
+                        key={request.id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="bg-muted/30 p-3 rounded-lg border relative group"
+                      >
+                        <div className="flex justify-between items-start mb-2">
+                          <div className="flex items-center gap-2">
+                            <div className="h-8 w-8 rounded-full bg-amber-100 flex items-center justify-center">
+                              <AlertCircle className="h-4 w-4 text-amber-600" />
+                            </div>
+                            <h3 className="font-medium text-sm">
+                              {request.title || "Untitled Request"}
+                            </h3>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline">
+                              {request.status}
+                            </Badge>
+                            <div className="flex items-center gap-2">
+                              {/* Delete button - desktop version */}
+                              <div className="hidden md:block">
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-7 w-7 rounded-full text-red-500 hover:text-red-600 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setRequestToDelete(request.id);
+                                        }}
+                                      >
+                                        <Trash2 className="h-4 w-4" />
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <span>Delete request</span>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              </div>
+                              {/* Delete button - mobile version (inline) */}
+                              <div className="md:hidden">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7 rounded-full text-red-500 hover:text-red-600 hover:bg-red-50"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setRequestToDelete(request.id);
+                                  }}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="pl-10 space-y-1">
+                          <div className="text-xs text-muted-foreground">
+                            Submitted: {formatDate(request.created_at)}
+                          </div>
+                          {request.purpose_of_visit && (
+                            <div className="text-xs text-muted-foreground">
+                              Purpose: {request.purpose_of_visit}
+                            </div>
+                          )}
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                </CardContent>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </Card>
+      )}
+    </>
+  );
+
   return (
     <div className="container mx-auto px-4 py-6 space-y-6 max-w-5xl">
       {/* Header */}
@@ -428,237 +675,34 @@ function QRCodePageContent() {
         </div>
       </div>
 
-      {/* QR Code List */}
-      <div>
-        <QRCodeList />
-      </div>
-      
-{/* Open Requests Section */}
-{isLoadingRequests && !isRefreshing ? (
-  <Card>
-    <CardHeader className="pb-2">
-      <Skeleton className="h-6 w-48" />
-    </CardHeader>
-    <CardContent>
-      <Skeleton className="h-16 w-full" />
-    </CardContent>
-  </Card>
-) : (
-  <Card className="border shadow-sm overflow-hidden">
-    <CardHeader 
-      className="pb-2 cursor-pointer" 
-      onClick={toggleOpenRequests}
-    >
-      <div className="flex items-center justify-between">
-        <div className="flex items-center">
-          <AlertCircle className="h-5 w-5 mr-2 text-amber-500" />
-          <CardTitle className="text-lg font-medium">
-            Open Requests
-            {pendingRequests.length > 0 && (
-              <Badge variant="outline" className="ml-2">
-                {pendingRequests.length}
-              </Badge>
-            )}
-          </CardTitle>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleRefresh();
-            }}
-            disabled={isRefreshing}
-            className="h-8 w-8 p-0"
-            title="Refresh requests"
-          >
-            <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
-            <span className="sr-only">Refresh</span>
-          </Button>
-          {isOpenRequestsExpanded ? (
-            <ChevronUp className="h-5 w-5" />
-          ) : (
-            <ChevronDown className="h-5 w-5" />
-          )}
-        </div>
-      </div>
-      <CardDescription className="flex justify-between items-center">
-        <span>
-          {pendingRequests.length > 0 
-            ? "Waiting for processing"
-            : "No open parking requests"}
-        </span>
-        {lastUpdated && (
-          <span className="text-xs">
-            Updated: {lastUpdated}
-          </span>
-        )}
-      </CardDescription>
-    </CardHeader>
-    
-    <AnimatePresence initial={false}>
-      {isOpenRequestsExpanded && pendingRequests.length > 0 && (
-        <motion.div
-          initial={{ height: 0, opacity: 0 }}
-          animate={{ height: "auto", opacity: 1 }}
-          exit={{ height: 0, opacity: 0 }}
-          transition={{ duration: 0.3 }}
-          className="overflow-hidden"
-        >
-          <CardContent className="pt-0">
-            <div className="space-y-3 mt-2">
-              {pendingRequests.map((request) => (
-                <motion.div 
-                  key={request.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className="bg-muted/30 p-3 rounded-lg border relative group"
-                >
-                  <div className="flex justify-between items-start mb-2">
-                    <div className="flex items-center gap-2">
-                      <div className="h-8 w-8 rounded-full bg-amber-100 flex items-center justify-center">
-                        <AlertCircle className="h-4 w-4 text-amber-600" />
-                      </div>
-                      <h3 className="font-medium text-sm">
-                        {request.title || "Untitled Request"}
-                      </h3>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline">
-                        {request.status}
-                      </Badge>
-                      <div className="flex items-center gap-2">
-                        {/* Delete button - desktop version */}
-                        <div className="hidden md:block">
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-7 w-7 rounded-full text-red-500 hover:text-red-600 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setRequestToDelete(request.id);
-                                  }}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <span>Delete request</span>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        </div>
-                        {/* Delete button - mobile version (inline) */}
-                        <div className="md:hidden">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 rounded-full text-red-500 hover:text-red-600 hover:bg-red-50"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setRequestToDelete(request.id);
-                            }}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="pl-10 space-y-1">
-                    <div className="text-xs text-muted-foreground">
-                      Submitted: {formatDate(request.created_at)}
-                    </div>
-                    {request.purpose_of_visit && (
-                      <div className="text-xs text-muted-foreground">
-                        Purpose: {request.purpose_of_visit}
-                      </div>
-                    )}
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </CardContent>
-        </motion.div>
-      )}
-    </AnimatePresence>
-  </Card>
-)}
-
-      
-      {/* Getting Started Card */}
-      <Card className="border overflow-hidden bg-gradient-to-br from-primary/5 to-secondary/5">
-        <CardHeader 
-          className="space-y-1 pb-2 cursor-pointer" 
-          onClick={toggleGettingStarted}
-        >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <Sparkles className="h-5 w-5 mr-2 text-primary" />
-              <CardTitle className="text-lg font-medium">Getting Started</CardTitle>
-            </div>
-            {isGettingStartedExpanded ? (
-              <ChevronUp className="h-5 w-5" />
-            ) : (
-              <ChevronDown className="h-5 w-5" />
-            )}
+      {/* Conditionally render sections based on first-time user status */}
+      {isFirstTimeUser ? (
+        <>
+          {/* Getting Started first for first-time users */}
+          <GettingStartedCard />
+          
+          {/* QR Code List */}
+          <div>
+            <QRCodeList />
           </div>
-          <CardDescription>
-            Welcome{firstName ? `, ${firstName}` : ''}! Follow these simple steps to reserve your parking.
-          </CardDescription>
-        </CardHeader>
-        
-        <AnimatePresence initial={false}>
-          {isGettingStartedExpanded && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.3 }}
-              className="overflow-hidden"
-            >
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {/* Step cards with improved mobile styling */}
-                  <StepCard 
-                    number={1} 
-                    title="Submit a Request" 
-                    description="Click 'Request' button above" 
-                    icon={<StepOneIcon className="h-5 w-5" />}
-                    color="blue"
-                  />
-                  <StepCard 
-                    number={2} 
-                    title="Fill in Details" 
-                    description="Provide your visit information" 
-                    icon={<StepTwoIcon className="h-5 w-5" />}
-                    color="orange"
-                  />
-                  <StepCard 
-                    number={3} 
-                    title="Get Your QR Code" 
-                    description="Save or access your QR code here" 
-                    icon={<StepThreeIcon className="h-5 w-5" />}
-                    color="blue"
-                  />
-                  <StepCard 
-                    number={4} 
-                    title="Visit Campus" 
-                    description="Show it at the entrance and get it scanned" 
-                    icon={<StepFourIcon className="h-5 w-5" />}
-                    color="orange"
-                  />
-                </div>
-              </CardContent>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </Card>
+          
+          {/* Open Requests */}
+          <OpenRequestsCard />
+        </>
+      ) : (
+        <>
+          {/* QR Code List */}
+          <div>
+            <QRCodeList />
+          </div>
+          
+          {/* Open Requests first for returning users */}
+          <OpenRequestsCard />
+          
+          {/* Getting Started below for returning users */}
+          <GettingStartedCard />
+        </>
+      )}
       
       {/* Desktop: Delete Confirmation Dialog */}
       {!isMobile && (
